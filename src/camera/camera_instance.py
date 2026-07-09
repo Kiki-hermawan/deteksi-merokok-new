@@ -138,8 +138,6 @@ class Camera:
         reconnect_attempts = 0
         max_reconnect_attempts = 5
         
-        class_names = {0: 'rokok', 1: 'orang'}
-        
         while self.running:
             if not self.cap.isOpened():
                 if reconnect_attempts < max_reconnect_attempts:
@@ -163,79 +161,48 @@ class Camera:
                 time.sleep(1)
                 continue
             
-            frame = cv2.resize(frame, (self.width, self.height))
+            # Let YOLOv10 handle internal letterbox resizing for accurate inference
+            # We only resize the frame here for output visualization if needed,
+            # but ideally we pass the original frame to model.track.
             reconnect_attempts = 0
             
             try:
-                results = self.model.track(frame, persist=True, verbose=False)
-                annotated_frame = frame.copy()
+                # 1. Gunakan predict (bukan track), serahkan filter confidence ke YOLO
+                results = self.model(frame, verbose=False, conf=self.min_confidence)
                 
-                cigarettes = []
-                persons = []
-                boxes = []
-                classes = []
-                confidences = []
-                
-                if results and results[0].boxes is not None:
-                    boxes = results[0].boxes.xyxy.cpu().numpy()
-                    classes = results[0].boxes.cls.cpu().numpy().astype(int)
-                    confidences = results[0].boxes.conf.cpu().numpy()
+                smoking_detected = False
+                highest_conf = 0.0
+
+                # 2. Cek hasil deteksi
+                if results and len(results[0].boxes) > 0:
+                    boxes = results[0].boxes
+                    classes = boxes.cls.cpu().numpy().astype(int)
+                    confidences = boxes.conf.cpu().numpy()
                     
                     for i in range(len(boxes)):
                         class_id = classes[i]
                         conf = confidences[i]
-                        class_name = class_names.get(class_id, 'unknown')
+                        class_name = self.model.names.get(class_id, 'unknown')
                         
-                        if conf >= self.min_confidence:
-                            if class_name == 'rokok':
-                                cigarettes.append((boxes[i], conf))
-                            elif class_name == 'orang':
-                                persons.append((boxes[i], conf))
+                        if class_name in ['merokok']:
+                            smoking_detected = True
+                            if conf > highest_conf:
+                                highest_conf = conf
+
+                # 3. Gunakan plotter bawaan YOLO (menjamin posisi bounding box presisi)
+                annotated_frame = results[0].plot()
                 
-                smoking_events = []
-                for cig_box, cig_conf in cigarettes:
-                    for person_box, person_conf in persons:
-                        distance = self._calculate_distance(cig_box, person_box)
-                        if distance < self.proximity_threshold:
-                            smoking_events.append((cig_box, cig_conf))
-                            break
+                # 4. Resize akhir hanya untuk tampilan antarmuka (web)
+                annotated_frame = cv2.resize(annotated_frame, (self.width, self.height))
                 
-                if smoking_events:
+                # Log event if detected
+                if smoking_detected:
                     current_time = time.time()
                     last_time = self.last_detection_time.get(self.name, 0)
                     
                     if current_time - last_time > self.min_interval:
                         self.last_detection_time[self.name] = current_time
-                        
-                        highest_conf = max(smoking_events, key=lambda x: x[1])[1]
                         self._log_detection('merokok', highest_conf)
-                
-                for i in range(len(boxes)):
-                    box = boxes[i]
-                    class_id = classes[i]
-                    conf = confidences[i]
-                    class_name = class_names.get(class_id, 'unknown')
-                    
-                    x1, y1, x2, y2 = map(int, box[:4])
-                    color = (0, 255, 0)
-                    
-                    if class_name == 'rokok':
-                        is_smoking_event = any(
-                            self._calculate_distance(box, person_box) < self.proximity_threshold
-                            for person_box, _ in persons
-                        )
-                        if is_smoking_event:
-                            color = (0, 0, 255)
-                    
-                    cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, 2)
-                    label = f"{class_name} {conf:.2f}"
-                    cv2.putText(annotated_frame, label, (x1, y1 - 10), 
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-                
-                # status indicator
-                # status = f"Smoking Events: {len(smoking_events)}"
-                # cv2.putText(annotated_frame, status, (10, 60), 
-                #            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255) if smoking_events else (0, 255, 0), 2)
                 
                 with self.frame_lock:
                     self.latest_frame = annotated_frame

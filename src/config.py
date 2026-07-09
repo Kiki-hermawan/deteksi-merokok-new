@@ -25,7 +25,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Detection processor
-    MODEL_PATH = os.getenv('MODEL_PATH', 'best.pt')
+    MODEL_PATH = os.getenv('MODEL_PATH', 'best-2.pt')
     MIN_CONFIDENCE = float(os.getenv('MIN_CONFIDENCE', 0.5))
     MIN_LOG_INTERVAL = float(os.getenv('MIN_LOG_INTERVAL', 5))
     PROXIMITY_THRESHOLD = float(os.getenv('PROXIMITY_THRESHOLD', 0.3))
