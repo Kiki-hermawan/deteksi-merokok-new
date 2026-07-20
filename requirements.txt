@@ -5,6 +5,8 @@ ultralytics>=8.2.45
 opencv-python-headless==4.9.0.80
 Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.29
+Flask-Migrate==4.0.7
+Alembic==1.13.2
 PyMySQL==1.1.0
 cryptography==42.0.8
 python-dotenv==1.0.1 

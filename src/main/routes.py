@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, Response
+from flask import Blueprint, render_template, Response, send_file, abort
 from flask_login import login_required, current_user
 import cv2
 import time
+import os
 from src.models import DetectionLog
 from src.camera.camera_manager import processor
 
@@ -17,6 +18,30 @@ def index():
 def detection_log():
     logs = DetectionLog.query.order_by(DetectionLog.timestamp.desc()).limit(50).all()
     return render_template('log.html', logs=logs)
+
+@main.route('/detection_log_image/<int:log_id>')
+@login_required
+def detection_log_image(log_id):
+    """Serve the captured detection image inline (for preview)."""
+    log = DetectionLog.query.get_or_404(log_id)
+    if not log.image_path or not os.path.isfile(log.image_path):
+        abort(404)
+    return send_file(log.image_path, mimetype='image/jpeg')
+
+@main.route('/detection_log_image/<int:log_id>/download')
+@login_required
+def detection_log_image_download(log_id):
+    """Serve the captured detection image as a download."""
+    log = DetectionLog.query.get_or_404(log_id)
+    if not log.image_path or not os.path.isfile(log.image_path):
+        abort(404)
+    download_name = log.image_filename or f"detection_{log_id}.jpg"
+    return send_file(
+        log.image_path,
+        mimetype='image/jpeg',
+        as_attachment=True,
+        download_name=download_name
+    )
 
 @main.route('/video_feed/<int:camera_id>')
 @login_required

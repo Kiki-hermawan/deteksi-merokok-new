@@ -14,7 +14,7 @@ from ultralytics import YOLO
 
 # ==== KONFIGURASI - SESUAIKAN DENGAN SETUP ANDA ====
 CAMERA_SOURCE = 0          # ganti sesuai index webcam Anda (0, 1, dst)
-MODEL_PATH = "best.pt"     # path ke model Anda
+MODEL_PATH = "best-23.pt"     # path ke model Anda
 CONF_THRESHOLD = 0.5
 WIDTH, HEIGHT = 640, 480
 USE_DSHOW = True           # True kalau di Windows, False kalau Linux/Mac

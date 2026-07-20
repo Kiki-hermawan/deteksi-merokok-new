@@ -1,11 +1,14 @@
 import os
 import cv2
 import time
+import re
+import uuid
 import numpy as np
 import threading
 #import math
 import traceback
 import queue
+from datetime import datetime
 from sqlalchemy.exc import OperationalError
 
 from src import db, notification_queue
@@ -14,6 +17,68 @@ from src.config import Config
 
 log_queue = queue.Queue()
 
+# Configuration for captured detection images
+CAPTURE_MAX_WIDTH = 1280
+CAPTURE_QUALITY = 85
+
+
+def _ensure_captures_dir(app):
+    """Ensure the captures directory inside the Flask instance folder exists."""
+    captures_dir = os.path.join(app.instance_path, 'captures')
+    os.makedirs(captures_dir, exist_ok=True)
+    return captures_dir
+
+
+def _sanitize_cam_name(cam_name):
+    """Create a filesystem-safe slug from the camera name."""
+    if not cam_name:
+        return 'unknown'
+    return re.sub(r'[^a-zA-Z0-9_-]', '_', cam_name).lower()[:30]
+
+
+def _resize_for_storage(image_bytes, max_width=CAPTURE_MAX_WIDTH):
+    """Decode JPEG bytes, resize if wider than max_width, re-encode to bytes."""
+    try:
+        np_arr = np.frombuffer(image_bytes, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+        if img is None:
+            return image_bytes
+
+        height, width = img.shape[:2]
+        if width > max_width:
+            scale = max_width / width
+            new_size = (max_width, int(height * scale))
+            img = cv2.resize(img, new_size, interpolation=cv2.INTER_AREA)
+
+        encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), CAPTURE_QUALITY]
+        success, buffer = cv2.imencode('.jpg', img, encode_params)
+        return buffer.tobytes() if success else image_bytes
+    except Exception as e:
+        print(f"Image resize error: {e}")
+        return image_bytes
+
+
+def _save_detection_image(app, image_bytes, cam_name):
+    """Persist detection image to disk and return (absolute_path, filename)."""
+    try:
+        captures_dir = _ensure_captures_dir(app)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        safe_cam = _sanitize_cam_name(cam_name)
+        short_id = uuid.uuid4().hex[:8]
+        filename = f"detection_{timestamp}_{safe_cam}_{short_id}.jpg"
+        file_path = os.path.join(captures_dir, filename)
+
+        processed_bytes = _resize_for_storage(image_bytes)
+        with open(file_path, 'wb') as f:
+            f.write(processed_bytes)
+
+        return file_path, filename
+    except Exception as e:
+        print(f"Failed to save detection image: {e}")
+        traceback.print_exc()
+        return None, None
+
+
 def detection_log_worker(app):
     """Background thread to write detection logs from the queue to the database."""
     while True:
@@ -21,13 +86,27 @@ def detection_log_worker(app):
             item = log_queue.get()
             if item is None:
                 break  # Poison pill to stop the thread
-            class_name, confidence, cam_name = item
+
+            # Backward compatibility: older queued items may not contain image bytes
+            if len(item) >= 4:
+                class_name, confidence, cam_name, image_bytes = item
+            else:
+                class_name, confidence, cam_name = item
+                image_bytes = None
+
             with app.app_context():
                 try:
+                    image_path = None
+                    image_filename = None
+                    if image_bytes:
+                        image_path, image_filename = _save_detection_image(app, image_bytes, cam_name)
+
                     detection = DetectionLog(
                         detail=class_name,
                         confidence=confidence,
-                        cam=cam_name
+                        cam=cam_name,
+                        image_path=image_path,
+                        image_filename=image_filename
                     )
                     db.session.add(detection)
                     db.session.commit()
@@ -203,7 +282,9 @@ class Camera:
                     
                     if current_time - last_time > self.min_interval:
                         self.last_detection_time[self.name] = current_time
-                        self._log_detection('merokok', highest_conf)
+                        success_encode, buffer = cv2.imencode('.jpg', annotated_frame)
+                        image_bytes = buffer.tobytes() if success_encode else None
+                        self._log_detection('merokok', highest_conf, image_bytes)
                 
                 with self.frame_lock:
                     self.latest_frame = annotated_frame
@@ -218,9 +299,9 @@ class Camera:
             self.cap.release()
         print(f"Detection stopped for {self.name}")
     
-    def _log_detection(self, class_name, confidence):
+    def _log_detection(self, class_name, confidence, image_bytes=None):
         try:
-            log_queue.put((class_name, confidence, self.name))
+            log_queue.put((class_name, confidence, self.name, image_bytes))
         except Exception as e:
             print(f"Failed to enqueue detection log: {e}")
         

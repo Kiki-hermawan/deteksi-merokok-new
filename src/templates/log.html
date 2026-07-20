@@ -26,6 +26,7 @@
                     <th>Kamera</th>
                     <th>Terdeteksi</th>
                     <th>Keyakinan</th>
+                    <th>Bukti</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,12 +41,95 @@
                             {{ '%.0f' % (log.confidence * 100) }}%
                         </span>
                     </td>
+                    <td>
+                        {% if log.has_image %}
+                        <div class="proof-cell">
+                            <img class="proof-thumb"
+                                 src="{{ url_for('main.detection_log_image', log_id=log.id) }}"
+                                 alt="Bukti deteksi {{ log.id }}"
+                                 onerror="this.style.display='none'; this.parentElement.classList.add('proof-missing');">
+                            <div class="proof-actions">
+                                <button class="btn btn-small" type="button"
+                                        data-image="{{ url_for('main.detection_log_image', log_id=log.id) }}"
+                                        data-download="{{ url_for('main.detection_log_image_download', log_id=log.id) }}"
+                                        data-time="{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}"
+                                        data-cam="{{ log.cam }}"
+                                        data-confidence="{{ '%.0f' % (log.confidence * 100) }}"
+                                        onclick="openImageModal(this)">
+                                    Preview
+                                </button>
+                                <a class="btn btn-small" href="{{ url_for('main.detection_log_image_download', log_id=log.id) }}">
+                                    Download
+                                </a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="proof-missing">Tidak ada gambar</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4" style="color: var(--ink-400); font-family: var(--font-body);">Belum ada deteksi yang tercatat.</td></tr>
+                <tr><td colspan="5" style="color: var(--ink-400); font-family: var(--font-body);">Belum ada deteksi yang tercatat.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- Modal for image preview -->
+<div id="image-modal" class="image-modal" onclick="closeImageModal(event)">
+    <div class="image-modal-content">
+        <button class="image-modal-close" type="button" onclick="closeImageModal()" aria-label="Tutup">&times;</button>
+        <img id="image-modal-img" src="" alt="Preview bukti deteksi">
+        <div class="image-modal-meta">
+            <div class="image-modal-info">
+                <span class="meta-label">Waktu</span>
+                <span class="meta-value" id="modal-time">-</span>
+            </div>
+            <div class="image-modal-info">
+                <span class="meta-label">Kamera</span>
+                <span class="meta-value" id="modal-cam">-</span>
+            </div>
+            <div class="image-modal-info">
+                <span class="meta-label">Keyakinan</span>
+                <span class="meta-value" id="modal-confidence">-</span>
+            </div>
+            <a id="modal-download" class="btn btn-primary btn-small" href="#">Download Gambar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openImageModal(button) {
+    const modal = document.getElementById('image-modal');
+    const img = document.getElementById('image-modal-img');
+    const downloadBtn = document.getElementById('modal-download');
+
+    img.src = button.dataset.image;
+    document.getElementById('modal-time').textContent = button.dataset.time;
+    document.getElementById('modal-cam').textContent = button.dataset.cam;
+    document.getElementById('modal-confidence').textContent = button.dataset.confidence + '%';
+    downloadBtn.href = button.dataset.download;
+
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal(event) {
+    if (event && event.target !== event.currentTarget) {
+        return;
+    }
+    const modal = document.getElementById('image-modal');
+    const img = document.getElementById('image-modal-img');
+    modal.classList.remove('is-open');
+    img.src = '';
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeImageModal();
+});
+</script>
 {% endblock %}
