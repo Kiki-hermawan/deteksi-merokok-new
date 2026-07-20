@@ -56,3 +56,5 @@ This documentation provides an overview of the codebase and its components.
 *   `.env.example`: Example environment configuration.
 *   `requirements.txt`: Python package dependencies.
 *   `README.md`: General setup and feature information. ([source](./README.md))
+
+.
