@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ruang Kendali{% endblock %} · Deteksi Merokok</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">RK</div>
+                <div class="brand-text">
+                    <strong>Ruang Kendali</strong>
+                    <span>DETEKSI MEROKOK</span>
+                </div>
+            </div>
+
+            <div class="nav-section-label">Pemantauan</div>
+            <nav class="nav">
+                <a href="{{ url_for('main.index') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('main.detection_log') }}" class="nav-link {% if active_page == 'log' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+                    <span>Log Deteksi</span>
+                </a>
+            </nav>
+            <div class="nav-divider"></div>
+            <div class="nav-section-label">Akun</div>
+            <nav class="nav">
+                <a href="{{ url_for('auth.profile') }}" class="nav-link {% if active_page == 'profile' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20c1.6-3.6 4.6-5.4 7.5-5.4s5.9 1.8 7.5 5.4"/></svg>
+                    <span>Profil</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.profile') }}" class="user-chip">
+                    <div class="user-avatar">{{ current_user.username[:2] | upper }}</div>
+                    <div class="user-meta">
+                        <strong>{{ current_user.username }}</strong>
+                        <span>Operator</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                    Keluar
+                </a>
+            </div>
+        </aside>
+
+        <main class="main">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="flash-stack">
+                    {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -3,13 +3,21 @@
 This documentation provides an overview of the codebase and its components.
 
 ## Target Detection Labels & Logic
-*   **Target Classes**: The system parses the following labels from the YOLO detection model:
-    *   `0`: `'rokok'` (Cigarette)
-    *   `1`: `'orang'` (Person)
-*   **Logged Event**: `'merokok'` (Smoking event) - generated only when a `'rokok'` label is detected within a certain proximity threshold (`Config.PROXIMITY_THRESHOLD`) of an `'orang'` label.
-*   **Code Location**: 
-    *   Mapping dictionary `class_names = {0: 'rokok', 1: 'orang'}` is defined inside `_process` in `src/camera/camera_instance.py` ([source](./src/camera/camera_instance.py)).
-    *   Proximity check and log trigger logic is located inside `_process` in `src/camera/camera_instance.py` ([source](./src/camera/camera_instance.py)).
+
+* **Target Classes**: The system parses the following label from the YOLO detection model:
+    * `0`: `'merokok'` (Smoking)
+
+* **Logged Event**: `'merokok'` (Smoking event) – generated whenever the YOLO model detects the `merokok` class.
+
+* **Detection Logic**:
+    * The system directly detects the `merokok` class from the YOLO model.
+    * No person detection is required.
+    * No proximity calculation is performed.
+    * Each valid `merokok` detection is logged according to the configured logging interval.
+
+* **Code Location**:
+    * Mapping dictionary `class_names = {0: 'merokok'}` is defined inside `_process` in `src/camera/camera_instance.py` ([source](./src/camera/camera_instance.py)).
+    * Detection logging is handled directly inside `_process` in `src/camera/camera_instance.py` ([source](./src/camera/camera_instance.py)).
 
 ## Core Application
 
