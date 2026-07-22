@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, Response, send_file, abort
+from flask import Blueprint, render_template, Response, send_file, abort, jsonify
 from flask_login import login_required, current_user
 import cv2
 import time
 import os
+from sqlalchemy import func
 from src.models import DetectionLog
 from src.camera.camera_manager import processor
 
@@ -42,6 +43,50 @@ def detection_log_image_download(log_id):
         as_attachment=True,
         download_name=download_name
     )
+
+@main.route('/api/stats')
+@login_required
+def api_stats():
+    """
+    Return aggregated detection statistics for the dashboard charts.
+    - detection_status: total detected vs not detected (not detected is
+      currently 0 because the system only logs positive 'merokok' events).
+    - camera_breakdown: count and percentage per camera.
+    - avg_confidence: average confidence across all logs.
+    """
+    total_detected = DetectionLog.query.filter_by(detail='merokok').count()
+    avg_confidence = (
+        DetectionLog.query.with_entities(func.avg(DetectionLog.confidence))
+        .filter_by(detail='merokok')
+        .scalar()
+    ) or 0.0
+
+    rows = (
+        DetectionLog.query
+        .with_entities(DetectionLog.cam, func.count(DetectionLog.id).label('count'))
+        .filter_by(detail='merokok')
+        .group_by(DetectionLog.cam)
+        .all()
+    )
+
+    camera_breakdown = []
+    for cam, count in rows:
+        pct = round((count / total_detected) * 100, 1) if total_detected else 0.0
+        camera_breakdown.append({
+            'name': cam or 'Unknown',
+            'count': count,
+            'percentage': pct
+        })
+
+    return jsonify({
+        'detection_status': {
+            'detected': total_detected,
+            'not_detected': 0
+        },
+        'camera_breakdown': camera_breakdown,
+        'avg_confidence': float(avg_confidence)
+    })
+
 
 @main.route('/video_feed/<int:camera_id>')
 @login_required

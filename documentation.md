@@ -52,6 +52,36 @@ This documentation provides an overview of the codebase and its components.
 *   `src/templates/register.html`: User registration page. ([source](./src/templates/register.html))
 *   `src/templates/profile.html`: User profile view. ([source](./src/templates/profile.html))
 
+## Audio Alarm & Dashboard Statistics
+
+### Audio Alarm
+
+*   **Asset**: `alarm.mp3` is served from `src/static/audio/alarm.mp3` (copied from the project root). ([source](./src/static/audio/alarm.mp3))
+*   **Frontend trigger**: `src/static/js/dashboard.js` plays the alarm when the live log polling detects a new detection row, with a 10-second cooldown to avoid spamming.
+*   **Mute control**: `src/templates/index.html` includes a mute/unmute button in the topbar. The mute state is persisted in `localStorage`.
+*   **Browser autoplay note**: Most browsers block audio until the user interacts with the page. The dashboard attempts to unlock the audio context on the first click/touch/key press.
+
+### Dashboard Statistics Charts
+
+*   **Library**: [Chart.js](https://www.chartjs.org/) loaded via CDN in `src/templates/index.html`.
+*   **Endpoint**: `src/main/routes.py` exposes `/api/stats` (JSON) that returns:
+    *   `detection_status`: `{detected, not_detected}`
+    *   `camera_breakdown`: list of `{name, count, percentage}`
+    *   `avg_confidence`: average confidence across all logs
+*   **Frontend**: `src/static/js/dashboard.js` renders:
+    *   A doughnut chart for detected vs. not-detected status.
+    *   A bar chart showing the number of detected events per camera.
+    *   An additional KPI card for average confidence.
+*   **Data note**: The application currently only logs positive `merokok` events, so `not_detected` is always `0`. The charts visualize the proportion of events per camera and the overall detected count.
+
+### Static Assets
+*   `src/static/audio/alarm.mp3`: Alarm sound file served by Flask.
+*   `src/static/css/style.css`: Added styles for the alarm mute button and chart panel.
+*   `src/static/js/dashboard.js`: Updated to handle camera feeds, live log, alarm, and charts.
+
+### Database Changes
+*   **No new tables or columns were added** for this feature. The statistics endpoint reads from the existing `detection_logs` table (`DetectionLog` model).
+
 ## Additional Files
 *   `.env.example`: Example environment configuration.
 *   `requirements.txt`: Python package dependencies.
