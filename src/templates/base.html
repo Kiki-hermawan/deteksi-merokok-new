@@ -30,6 +30,10 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
                     <span>Log Deteksi</span>
                 </a>
+                <a href="{{ url_for('main.analytics') }}" class="nav-link {% if active_page == 'analytics' %}active{% endif %}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M18 17V9M13 17v-3M8 17v-7"/></svg>
+                    <span>Analitik & Laporan</span>
+                </a>
             </nav>
             <div class="nav-divider"></div>
             <div class="nav-section-label">Akun</div>

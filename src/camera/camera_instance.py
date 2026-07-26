@@ -172,17 +172,25 @@ class Camera:
             self.model = model
             self.min_confidence = min_confidence
             self.min_interval = min_interval
-            
+    
             print(f"Initializing camera: {self.name} ({self.source})")
             self.cap = self.get_video_capture()
-            
+    
+            # Retry singkat kalau device belum siap dibuka ulang
+            retries = 0
+            while not self.cap.isOpened() and retries < 3:
+                time.sleep(0.5)
+                self.cap = self.get_video_capture()
+                retries += 1
+    
             if not self.cap.isOpened():
                 print(f"Error opening camera: {self.name}")
                 with self.frame_lock:
                     self.latest_frame = self.create_error_frame("Camera Error")
                 return False
-                
+    
             self.running = True
+            self.manually_stopped = False
             self.thread = threading.Thread(target=self._process)
             self.thread.daemon = True
             self.thread.start()

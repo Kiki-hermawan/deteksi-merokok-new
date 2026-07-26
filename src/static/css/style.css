@@ -449,6 +449,61 @@ button, input { font-family: inherit; }
 
 .empty-state { padding: 44px 20px; text-align: center; color: var(--ink-400); font-size: 13px; }
 
+.camera-hud-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.power-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(46, 204, 113, 0.6);
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+.power-btn svg { width: 13px; height: 13px; }
+.power-btn:hover { background: rgba(46, 204, 113, 0.28); }
+.power-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.power-btn.is-off {
+    border-color: rgba(150, 150, 150, 0.5);
+    background: rgba(120, 120, 120, 0.15);
+    color: #999;
+}
+.power-btn.is-off:hover { background: rgba(120, 120, 120, 0.28); }
+
+/* Tile redup total saat kamera sengaja dimatikan */
+.camera-tile.is-off .camera-feed { visibility: hidden; }
+.camera-tile.is-off .bracket-tr,
+.camera-tile.is-off .bracket-bl { opacity: 0.3; }
+.camera-tile.is-off .rec-indicator { display: none; }
+
+.camera-tile.is-off .camera-overlay-msg {
+    display: flex;
+    flex-direction: column;
+    background: rgba(20, 20, 20, 0.75);
+}
+.camera-tile.is-off .camera-overlay-msg .spinner { display: none; }
+.camera-tile.is-off .camera-overlay-msg .overlay-text {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #aaa;
+    font-size: 13px;
+}
+.camera-tile.is-off .camera-overlay-msg .overlay-text::before {
+    content: "⏻";
+    font-size: 15px;
+}
+
 /* =========================================================================
    Detection log table
    ========================================================================= */

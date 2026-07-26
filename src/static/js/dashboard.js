@@ -3,9 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initCameraFeeds();
   initLiveLog();
   initAlarm();
-  initCharts();
 });
-
 
 function initLiveClock() {
   const el = document.getElementById("live-clock");
@@ -21,14 +19,26 @@ function initLiveClock() {
 function initCameraFeeds() {
   const tiles = document.querySelectorAll(".camera-tile");
   const total = tiles.length;
-  const onlineState = {};
+  // state per kamera: 'live' | 'problem' | 'off'
+  const cameraState = {};
 
   function updateCameraStat() {
     const foot = document.getElementById("stat-cameras-foot");
     const onlineEl = document.getElementById("stat-cameras-online");
-    const onlineCount = Object.values(onlineState).filter(Boolean).length;
+
+    const states = Object.values(cameraState);
+    const onlineCount = states.filter((s) => s === "live").length;
+    const offCount = states.filter((s) => s === "off").length;
+    const problemCount = states.filter((s) => s === "problem").length;
+
     if (onlineEl) onlineEl.textContent = onlineCount;
-    if (foot) foot.textContent = onlineCount === total ? "semua terhubung" : (total - onlineCount) + " kamera bermasalah";
+
+    if (foot) {
+      const parts = [];
+      if (problemCount > 0) parts.push(`${problemCount} kamera bermasalah`);
+      if (offCount > 0) parts.push(`${offCount} dimatikan manual`);
+      foot.textContent = parts.length ? parts.join(" • ") : "semua terhubung";
+    }
   }
 
   tiles.forEach((tile) => {
@@ -36,57 +46,119 @@ function initCameraFeeds() {
     const feed = tile.querySelector(".camera-feed");
     const overlay = tile.querySelector(".camera-overlay-msg");
     const rec = tile.querySelector(".rec-indicator");
+    const powerBtn = tile.querySelector(".power-btn");
     if (!feed) return;
 
-    onlineState[cameraId] = false;
+    const initialState = tile.dataset.initialState === "off" ? "off" : "on";
+    cameraState[cameraId] = initialState === "off" ? "off" : "connecting";
     let watchdog = null;
+    let pollTimer = null;
+    let isOff = initialState === "off";
 
     function setState(state) {
+      if (isOff) return;
       if (state === "connecting") {
         overlay.style.display = "flex";
         overlay.querySelector(".overlay-text").textContent = "Menghubungkan…";
         feed.style.visibility = "hidden";
         rec.classList.add("offline");
-        onlineState[cameraId] = false;
+        cameraState[cameraId] = "problem";
       } else if (state === "live") {
         overlay.style.display = "none";
         feed.style.visibility = "visible";
         rec.classList.remove("offline");
-        onlineState[cameraId] = true;
+        cameraState[cameraId] = "live";
       } else {
         overlay.style.display = "flex";
-        overlay.querySelector(".overlay-text").textContent = "Koneksi terputus — mencoba lagi…";
+        overlay.querySelector(".overlay-text").textContent =
+          "Koneksi terputus — mencoba lagi…";
         feed.style.visibility = "hidden";
         rec.classList.add("offline");
-        onlineState[cameraId] = false;
+        cameraState[cameraId] = "problem";
       }
       updateCameraStat();
     }
 
     function reload() {
+      if (isOff) return;
       const src = feed.getAttribute("data-src");
       setState("connecting");
       feed.src = src + "?t=" + Date.now();
     }
 
+    function startWatchdog() {
+      clearInterval(pollTimer);
+      pollTimer = setInterval(() => {
+        if (isOff) return;
+        if (feed.complete && feed.naturalWidth === 0) {
+          setState("offline");
+          reload();
+        }
+      }, 6000);
+    }
+
+    function applyOffUI() {
+      isOff = true;
+      clearTimeout(watchdog);
+      clearInterval(pollTimer);
+      feed.removeAttribute("src");
+      tile.classList.add("is-off");
+      overlay.style.display = "flex";
+      overlay.querySelector(".overlay-text").textContent = "Kamera dimatikan";
+      cameraState[cameraId] = "off";
+      if (powerBtn) powerBtn.classList.add("is-off");
+      updateCameraStat();
+    }
+
+    function applyOnUI() {
+      isOff = false;
+      tile.classList.remove("is-off");
+      if (powerBtn) powerBtn.classList.remove("is-off");
+      reload();
+      startWatchdog();
+    }
+
     feed.addEventListener("load", () => setState("live"));
     feed.addEventListener("error", () => {
+      if (isOff) return;
       setState("offline");
       clearTimeout(watchdog);
       watchdog = setTimeout(reload, 3000);
     });
 
-    setInterval(() => {
-      if (feed.complete && feed.naturalWidth === 0) {
-        setState("offline");
-        reload();
-      }
-    }, 6000);
+    if (powerBtn) {
+      powerBtn.addEventListener("click", async () => {
+        powerBtn.disabled = true;
+        try {
+          const res = await fetch(`/camera/${cameraId}/toggle`, {
+            method: "POST",
+            credentials: "same-origin",
+          });
+          const data = await res.json();
+          if (data.running) {
+            applyOnUI();
+          } else {
+            applyOffUI();
+          }
+        } catch (err) {
+          console.error("Gagal toggle kamera:", err);
+        } finally {
+          powerBtn.disabled = false;
+        }
+      });
+    }
 
-    reload();
+    // Inisialisasi sesuai status awal dari server
+    if (isOff) {
+      applyOffUI();
+    } else {
+      startWatchdog();
+      reload();
+    }
+
+    updateCameraStat();
   });
 }
-
 
 const ALARM_COOLDOWN_MS = 10000; // minimum time between alarm sounds
 
@@ -133,7 +205,10 @@ function initAlarm() {
 
   // Unlock audio on the first user gesture anywhere on the page.
   ["click", "touchstart", "keydown"].forEach((evt) => {
-    document.body.addEventListener(evt, unlockAudio, { once: true, passive: true });
+    document.body.addEventListener(evt, unlockAudio, {
+      once: true,
+      passive: true,
+    });
   });
 
   // Also unlock when the mute button is clicked.
@@ -197,11 +272,103 @@ function showAlarmBlockedNotice() {
   const notice = document.createElement("div");
   notice.id = "alarm-blocked-notice";
   notice.className = "flash";
-  notice.innerHTML = "🔇 Audio alarm diblokir browser. Klik tombol <strong>Alarm Aktif</strong> untuk mengaktifkannya.";
+  notice.innerHTML =
+    "🔇 Audio alarm diblokir browser. Klik tombol <strong>Alarm Aktif</strong> untuk mengaktifkannya.";
   const main = document.querySelector(".main");
   if (main) {
     main.insertBefore(notice, main.firstChild);
     setTimeout(() => notice.remove(), 6000);
+  }
+}
+
+const DASHBOARD_ROWS_PER_PAGE = 5;
+let dashboardAllRows = [];
+let dashboardCurrentPage = 1;
+
+function dashboardDisplayPage(pageNum) {
+  if (dashboardAllRows.length === 0) return;
+
+  dashboardCurrentPage = pageNum;
+  const totalPages = Math.ceil(
+    dashboardAllRows.length / DASHBOARD_ROWS_PER_PAGE,
+  );
+
+  if (dashboardCurrentPage < 1) dashboardCurrentPage = 1;
+  if (dashboardCurrentPage > totalPages) dashboardCurrentPage = totalPages;
+
+  const body = document.getElementById("live-log-body");
+  body.innerHTML = "";
+
+  const start = (dashboardCurrentPage - 1) * DASHBOARD_ROWS_PER_PAGE;
+  const end = start + DASHBOARD_ROWS_PER_PAGE;
+
+  for (let i = start; i < end && i < dashboardAllRows.length; i++) {
+    body.appendChild(dashboardAllRows[i].cloneNode(true));
+  }
+
+  // Update pagination info
+  document.getElementById("dash-current-page").textContent =
+    dashboardCurrentPage;
+  document.getElementById("dash-total-pages").textContent = totalPages || 1;
+  document.getElementById("dash-page-info").textContent =
+    start + 1 + " - " + Math.min(end, dashboardAllRows.length);
+  document.getElementById("dash-total-logs").textContent =
+    dashboardAllRows.length;
+
+  // Update page numbers
+  dashboardUpdatePageNumbers(totalPages);
+}
+
+function dashboardUpdatePageNumbers(totalPages) {
+  const pageNumbersDiv = document.getElementById("dash-page-numbers");
+  pageNumbersDiv.innerHTML = "";
+
+  const maxButtons = 5;
+  let startPage = Math.max(
+    1,
+    dashboardCurrentPage - Math.floor(maxButtons / 2),
+  );
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+  if (endPage - startPage + 1 < maxButtons) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.style.padding = "6px 10px";
+    btn.style.border = "none";
+    btn.style.borderRadius = "4px";
+    btn.style.cursor = "pointer";
+    btn.style.fontSize = "13px";
+
+    if (i === dashboardCurrentPage) {
+      btn.style.backgroundColor = "#4a90e2";
+      btn.style.color = "white";
+      btn.style.fontWeight = "bold";
+    } else {
+      btn.style.backgroundColor = "#f0f0f0";
+      btn.style.color = "#333";
+    }
+
+    btn.onclick = () => dashboardDisplayPage(i);
+    pageNumbersDiv.appendChild(btn);
+  }
+}
+
+function dashboardNextPage() {
+  const totalPages = Math.ceil(
+    dashboardAllRows.length / DASHBOARD_ROWS_PER_PAGE,
+  );
+  if (dashboardCurrentPage < totalPages) {
+    dashboardDisplayPage(dashboardCurrentPage + 1);
+  }
+}
+
+function dashboardPreviousPage() {
+  if (dashboardCurrentPage > 1) {
+    dashboardDisplayPage(dashboardCurrentPage - 1);
   }
 }
 
@@ -220,9 +387,11 @@ function initLiveLog() {
       const today = new Date();
       const isToday = (cellText) => {
         const d = new Date(cellText.replace(" ", "T"));
-        return d.getFullYear() === today.getFullYear() &&
-               d.getMonth() === today.getMonth() &&
-               d.getDate() === today.getDate();
+        return (
+          d.getFullYear() === today.getFullYear() &&
+          d.getMonth() === today.getMonth() &&
+          d.getDate() === today.getDate()
+        );
       };
       const count = rows.filter((row) => {
         const cell = row.querySelector("td");
@@ -238,19 +407,21 @@ function initLiveLog() {
       if (!res.ok) return;
       const html = await res.text();
       const doc = new DOMParser().parseFromString(html, "text/html");
-      const rows = Array.from(doc.querySelectorAll("table.log-table tbody tr[data-key]"));
+      const rows = Array.from(
+        doc.querySelectorAll("table.log-table tbody tr[data-key]"),
+      );
 
       if (rows.length === 0) {
-        body.innerHTML = '<tr><td colspan="5" style="color: var(--ink-400); font-family: var(--font-body);">Belum ada deteksi yang tercatat.</td></tr>';
+        dashboardAllRows = [];
+        dashboardDisplayPage(1);
         updateLogStats([]);
         return;
       }
 
-      body.innerHTML = "";
       const nextKnown = new Set();
       let hasNew = false;
 
-      rows.forEach((row) => {
+      dashboardAllRows = rows.map((row) => {
         const key = row.getAttribute("data-key");
         nextKnown.add(key);
         const clone = row.cloneNode(true);
@@ -258,7 +429,15 @@ function initLiveLog() {
           clone.classList.add("is-new");
           hasNew = true;
         }
-        body.appendChild(clone);
+        // Tampilan hanya menampilkan Kamera, Terdeteksi, Keyakinan.
+        // Waktu & Gambar (Preview/Download) disembunyikan, tapi datanya tetap
+        // dipakai dari "rows" asli (belum dipotong) untuk statistik & grafik tren.
+        const tds = clone.querySelectorAll("td");
+        if (tds.length >= 5) {
+          tds[4].remove(); // Gambar (Preview/Download)
+          tds[0].remove(); // Waktu
+        }
+        return clone;
       });
 
       if (hasNew && typeof window.triggerAlarm === "function") {
@@ -268,6 +447,9 @@ function initLiveLog() {
       knownKeys = nextKnown;
       firstLoad = false;
       updateLogStats(rows);
+
+      // Display first page
+      dashboardDisplayPage(1);
     } catch (err) {
       console.error("Gagal memuat log deteksi:", err);
     }
@@ -275,137 +457,4 @@ function initLiveLog() {
 
   refresh();
   setInterval(refresh, 4000);
-}
-
-let chartStatus = null;
-let chartCamera = null;
-
-function initCharts() {
-  if (typeof Chart === "undefined") {
-    console.warn("Chart.js not loaded; skipping charts.");
-    return;
-  }
-
-  const statusCanvas = document.getElementById("chart-status");
-  const cameraCanvas = document.getElementById("chart-camera");
-  if (!statusCanvas || !cameraCanvas) return;
-
-  const commonOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "rgba(23, 26, 33, 0.92)",
-        titleFont: { family: "'Space Grotesk', sans-serif", size: 13 },
-        bodyFont: { family: "'Inter', sans-serif", size: 12.5 },
-        padding: 10,
-        cornerRadius: 8,
-        callbacks: {
-          label: (ctx) => {
-            const label = ctx.label || "";
-            const value = ctx.raw || 0;
-            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-            const pct = total ? Math.round((value / total) * 100) : 0;
-            return `${label}: ${value} (${pct}%)`;
-          }
-        }
-      }
-    }
-  };
-
-  chartStatus = new Chart(statusCanvas, {
-    type: "doughnut",
-    data: {
-      labels: ["Perokok Terdeteksi", "Tidak Terdeteksi"],
-      datasets: [{
-        data: [0, 0],
-        backgroundColor: ["#d92d20", "#12805c"],
-        borderWidth: 0,
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      ...commonOptions,
-      cutout: "62%"
-    }
-  });
-
-  chartCamera = new Chart(cameraCanvas, {
-    type: "bar",
-    data: {
-      labels: [],
-      datasets: [{
-        label: "Jumlah Orang Terdeteksi",
-        data: [],
-        backgroundColor: "#e8590c",
-        borderRadius: 6,
-        barThickness: 28
-      }]
-    },
-    options: {
-      ...commonOptions,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: { stepSize: 1, font: { family: "'JetBrains Mono', monospace", size: 11 } },
-          grid: { color: "#eef0f3" }
-        },
-        x: {
-          ticks: { font: { family: "'Inter', sans-serif", size: 11 }, maxRotation: 0, autoSkip: true },
-          grid: { display: false }
-        }
-      }
-    }
-  });
-
-  refreshCharts();
-  setInterval(refreshCharts, 5000);
-}
-
-async function refreshCharts() {
-  try {
-    const res = await fetch("/api/stats", { credentials: "same-origin" });
-    if (!res.ok) return;
-    const stats = await res.json();
-
-    const avgEl = document.getElementById("stat-avg-confidence");
-    if (avgEl && stats.avg_confidence !== undefined) {
-      avgEl.textContent = (stats.avg_confidence * 100).toFixed(0) + "%";
-    }
-
-    if (chartStatus) {
-      chartStatus.data.datasets[0].data = [
-        stats.detection_status?.detected || 0,
-        stats.detection_status?.not_detected || 0
-      ];
-      chartStatus.update();
-      renderStatusLegend(stats.detection_status);
-    }
-
-    if (chartCamera && stats.camera_breakdown) {
-      chartCamera.data.labels = stats.camera_breakdown.map((c) => c.name);
-      chartCamera.data.datasets[0].data = stats.camera_breakdown.map((c) => c.count);
-      chartCamera.update();
-    }
-  } catch (err) {
-    console.error("Gagal memuat statistik:", err);
-  }
-}
-
-function renderStatusLegend(status) {
-  const legend = document.getElementById("chart-status-legend");
-  if (!legend || !status) return;
-  const total = status.detected + status.not_detected;
-  const pct = total ? Math.round((status.detected / total) * 100) : 0;
-  legend.innerHTML = `
-    <div class="legend-item">
-      <span class="legend-dot" style="background:#d92d20"></span>
-      <span class="legend-text">Perokok terdeteksi: <strong>${status.detected}</strong> (${pct}%)</span>
-    </div>
-    <div class="legend-item">
-      <span class="legend-dot" style="background:#12805c"></span>
-      <span class="legend-text">Tidak terdeteksi: <strong>${status.not_detected}</strong> (${100 - pct}%)</span>
-    </div>
-  `;
 }

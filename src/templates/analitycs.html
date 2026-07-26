@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Analitik & Laporan{% endblock %}
+{% set active_page = 'analytics' %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <div class="breadcrumb">Ruang Kendali <span class="sep">/</span> <span class="current">Analitik & Laporan</span></div>
+        <h1>Analitik & Laporan Deteksi Rokok</h1>
+        <div class="topbar-sub">Analisis tren, distribusi, dan ringkasan kejadian deteksi</div>
+    </div>
+</div>
+
+<!-- Ringkasan insight otomatis dari log deteksi -->
+<div class="panel" style="margin-bottom: 20px;">
+    <div class="panel-header">
+        <div>
+            <h2>Ringkasan & Insight</h2>
+            <div class="panel-hint">Dihasilkan otomatis dari log deteksi terkini</div>
+        </div>
+    </div>
+    <ul id="report-insights" class="insight-list">
+        <li>Memuat ringkasan…</li>
+    </ul>
+</div>
+
+<div class="panel chart-panel" style="margin-bottom: 20px;">
+    <div class="panel-header">
+        <div>
+            <h2>Statistik Deteksi</h2>
+            <div class="panel-hint">Distribusi dan perbandingan berdasarkan seluruh log tercatat</div>
+        </div>
+    </div>
+    <div class="chart-grid">
+        <div class="chart-card">
+            <div class="chart-title">Deteksi Per Jam (24 Jam Terakhir)</div>
+            <div class="chart-canvas-wrap">
+                <canvas id="chart-hourly"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Deteksi Per Hari (30 Hari Terakhir)</div>
+            <div class="chart-canvas-wrap">
+                <canvas id="chart-daily"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Distribusi Keyakinan Model</div>
+            <div class="chart-canvas-wrap">
+                <canvas id="chart-confidence"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Status Kejadian</div>
+            <div class="chart-canvas-wrap">
+                <canvas id="chart-status"></canvas>
+            </div>
+            <div class="chart-legend" id="chart-status-legend"></div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2>Log Deteksi Lengkap</h2>
+            <div class="panel-hint">Untuk daftar rinci per kejadian, lihat halaman log</div>
+        </div>
+        <a href="{{ url_for('main.detection_log') }}" class="btn">Lihat semua log</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  .insight-list {
+    margin: 0;
+    padding: 0 0 0 20px;
+    font-family: var(--font-body);
+    color: var(--ink-700, #333);
+    line-height: 1.9;
+  }
+  .insight-list li { margin-bottom: 4px; }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

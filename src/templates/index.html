@@ -10,7 +10,8 @@
         <div class="topbar-sub">Ringkasan pemantauan kamera dan deteksi hari ini</div>
     </div>
     <div class="topbar-right">
-        <button class="alarm-mute-btn" id="alarm-mute-btn" type="button" title="Aktifkan/Matikan alarm" aria-label="Alarm aktif">
+        <button class="alarm-mute-btn" id="alarm-mute-btn" type="button" title="Aktifkan/Matikan alarm"
+            aria-label="Alarm aktif">
             <span class="alarm-mute-icon" id="alarm-mute-icon"></span>
             <span class="alarm-mute-label" id="alarm-mute-label">Alarm Aktif</span>
         </button>
@@ -27,7 +28,11 @@
         <div class="stat-top">
             <span class="stat-label">Kamera Terdaftar</span>
             <span class="stat-icon tone-neutral">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8l5 3-5 3V8z"/><rect x="1" y="6" width="12" height="12" rx="2"/><path d="M15 9l7-4v14l-7-4"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 8l5 3-5 3V8z" />
+                    <rect x="1" y="6" width="12" height="12" rx="2" />
+                    <path d="M15 9l7-4v14l-7-4" />
+                </svg>
             </span>
         </div>
         <div class="stat-value">{{ cameras|length }}</div>
@@ -37,7 +42,9 @@
         <div class="stat-top">
             <span class="stat-label">Kamera Online</span>
             <span class="stat-icon tone-success">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5" />
+                </svg>
             </span>
         </div>
         <div class="stat-value" id="stat-cameras-online">–</div>
@@ -47,7 +54,10 @@
         <div class="stat-top">
             <span class="stat-label">Deteksi Hari Ini</span>
             <span class="stat-icon tone-danger">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9L2.6 17.2A1.8 1.8 0 004.2 20h15.6a1.8 1.8 0 001.6-2.8L13.7 3.9a1.8 1.8 0 00-3.4 0z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M12 9v4M12 17h.01M10.3 3.9L2.6 17.2A1.8 1.8 0 004.2 20h15.6a1.8 1.8 0 001.6-2.8L13.7 3.9a1.8 1.8 0 00-3.4 0z" />
+                </svg>
             </span>
         </div>
         <div class="stat-value" id="stat-detections-today">–</div>
@@ -57,7 +67,9 @@
         <div class="stat-top">
             <span class="stat-label">Total Log Tersimpan</span>
             <span class="stat-icon tone-accent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h10"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 5h16M4 12h16M4 19h10" />
+                </svg>
             </span>
         </div>
         <div class="stat-value" id="stat-detections-total">–</div>
@@ -67,37 +79,13 @@
         <div class="stat-top">
             <span class="stat-label">Rata-rata Keyakinan</span>
             <span class="stat-icon tone-accent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
             </span>
         </div>
         <div class="stat-value" id="stat-avg-confidence">–</div>
         <div class="stat-foot">dari seluruh log</div>
-    </div>
-</div>
-
-<!-- Statistik visual: persentase & perbandingan deteksi -->
-<div class="panel chart-panel" style="margin-bottom: 20px;">
-    <div class="panel-header">
-        <div>
-            <h2>Statistik Deteksi</h2>
-            <div class="panel-hint">Distribusi dan perbandingan berdasarkan seluruh log tercatat</div>
-        </div>
-    </div>
-    <div class="chart-grid">
-        <div class="chart-card">
-            <div class="chart-title">Status Kejadian</div>
-            <div class="chart-canvas-wrap">
-                <canvas id="chart-status"></canvas>
-            </div>
-            <div class="chart-legend" id="chart-status-legend"></div>
-        </div>
-        <div class="chart-card">
-            <div class="chart-title">Deteksi per Kamera</div>
-            <div class="chart-canvas-wrap">
-                <canvas id="chart-camera"></canvas>
-            </div>
-            <div class="chart-legend" id="chart-camera-legend"></div>
-        </div>
     </div>
 </div>
 
@@ -112,17 +100,26 @@
     {% if cameras %}
     <div class="camera-grid">
         {% for camera in cameras %}
-        <div class="camera-tile" id="camera-container-{{ loop.index0 }}" data-camera-id="{{ loop.index0 }}">
+        <div class="camera-tile" id="camera-container-{{ loop.index0 }}" data-camera-id="{{ loop.index0 }}"
+            data-initial-state="{{ 'off' if not camera.running else 'on' }}">
             <div class="camera-hud-top">
                 <span class="camera-name">{{ camera.name }}</span>
-                <span class="rec-indicator" id="rec-{{ loop.index0 }}"><span class="rec-dot"></span>LIVE</span>
+                <div class="camera-hud-controls">
+                    <span class="rec-indicator" id="rec-{{ loop.index0 }}"><span class="rec-dot"></span>LIVE</span>
+                    <button class="power-btn {{ 'is-off' if not camera.running }}" id="toggle-{{ loop.index0 }}"
+                        data-camera-id="{{ loop.index0 }}" type="button" title="Nyalakan/Matikan kamera">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round">
+                            <path d="M12 2v8" />
+                            <path d="M18.4 6.6a9 9 0 11-12.77 0" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <span class="bracket-tr"></span>
             <span class="bracket-bl"></span>
-            <img class="camera-feed"
-                 id="feed-{{ loop.index0 }}"
-                 data-src="{{ url_for('main.video_feed', camera_id=loop.index0) }}"
-                 alt="Stream {{ camera.name }}">
+            <img class="camera-feed" id="feed-{{ loop.index0 }}"
+                data-src="{{ url_for('main.video_feed', camera_id=loop.index0) }}" alt="Stream {{ camera.name }}">
             <div class="camera-hud-bottom">
                 <span>CAM-{{ '%02d' % loop.index0 }}</span>
                 <span id="feedstamp-{{ loop.index0 }}"></span>
@@ -151,23 +148,37 @@
         <table class="log-table">
             <thead>
                 <tr>
-                    <th>Waktu</th>
                     <th>Kamera</th>
                     <th>Terdeteksi</th>
                     <th>Keyakinan</th>
-                    <th>Gambar</th>
                 </tr>
             </thead>
             <tbody id="live-log-body">
-                <tr><td colspan="4" style="color: var(--ink-400); font-family: var(--font-body);">Memuat log…</td></tr>
+                <tr>
+                    <td colspan="3" style="color: var(--ink-400); font-family: var(--font-body);">Memuat log…</td>
+                </tr>
             </tbody>
         </table>
     </div>
-</div>
-{% endblock %}
 
-{% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- Pagination Controls -->
+    <div
+        style="padding: 15px; border-top: 1px solid var(--stroke, #ddd); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 13px; color: var(--ink-500);">
+            Halaman <span id="dash-current-page">1</span> dari <span id="dash-total-pages">1</span> |
+            <span id="dash-page-info">0 - 0</span> dari <span id="dash-total-logs">0</span>
+        </div>
+        <div style="display: flex; gap: 5px;">
+            <button onclick="dashboardPreviousPage()" class="btn"
+                style="padding: 6px 12px; background-color: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">←
+                Sebelumnya</button>
+            <div id="dash-page-numbers" style="display: flex; gap: 3px;"></div>
+            <button onclick="dashboardNextPage()" class="btn"
+                style="padding: 6px 12px; background-color: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer;">Selanjutnya
+                →</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

@@ -7,15 +7,47 @@
     <div>
         <div class="breadcrumb">Ruang Kendali <span class="sep">/</span> <span class="current">Log Deteksi</span></div>
         <h1>Log Deteksi</h1>
-        <div class="topbar-sub">50 kejadian terakhir yang tercatat oleh sistem</div>
+        <div class="topbar-sub">Riwayat deteksi yang tercatat oleh sistem</div>
     </div>
 </div>
 
+<!-- Date and Camera Filter Section -->
+<div class="panel" style="margin-bottom: 20px;">
+    <div class="panel-header">
+        <div>
+            <h2>🗓️ 📹 Filter Tanggal & Kamera</h2>
+            <div class="panel-hint">Pilih tanggal dan kamera untuk menyaring hasil deteksi</div>
+        </div>
+    </div>
+    <div style="padding: 15px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <label for="filter-date" style="font-weight: 500;">Pilih Tanggal:</label>
+            <input type="date" id="filter-date" style="padding: 8px 12px; border: 1px solid var(--stroke, #ddd); border-radius: 4px; font-size: 14px;">
+            
+            <label for="filter-camera" style="font-weight: 500;">Pilih Kamera:</label>
+            <select id="filter-camera" style="padding: 8px 12px; border: 1px solid var(--stroke, #ddd); border-radius: 4px; font-size: 14px;">
+                <option value="">Semua Kamera</option>
+            </select>
+            
+            <label for="filter-detail" style="font-weight: 500;">Terdeteksi:</label>
+            <select id="filter-detail" style="padding: 8px 12px; border: 1px solid var(--stroke, #ddd); border-radius: 4px; font-size: 14px;">
+                <option value="">Semua Jenis</option>
+            </select>
+            
+            <button onclick="applyFilters()" class="btn" style="padding: 8px 16px; background-color: #4a90e2; color: white;">Filter</button>
+            <button onclick="resetFilters()" class="btn" style="padding: 8px 16px; background-color: #999; color: white;">Reset</button>
+        </div>
+        <div id="filter-status" style="margin-top: 10px; font-size: 14px; color: var(--ink-500);"></div>
+    </div>
+</div>
+
+<!-- All Logs Table -->
+{% if logs %}
 <div class="panel">
     <div class="panel-header">
         <div>
             <h2>Riwayat Deteksi</h2>
-            <div class="panel-hint">Diurutkan dari yang terbaru</div>
+            <div class="panel-hint">Total {{ logs|length }} deteksi tercatat</div>
         </div>
     </div>
     <div class="log-table-wrap">
@@ -31,7 +63,7 @@
             </thead>
             <tbody>
                 {% for log in logs %}
-                <tr data-key="{{ log.id }}">
+                <tr data-key="{{ log.id }}" data-date="{{ log.timestamp.strftime('%Y-%m-%d') }}" data-cam="{{ log.cam }}" data-detail="{{ log.detail }}" class="log-row">
                     <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                     <td>CAM &middot; {{ log.cam }}</td>
                     <td><span class="badge badge-danger">{{ log.detail }}</span></td>
@@ -68,13 +100,37 @@
                         {% endif %}
                     </td>
                 </tr>
-                {% else %}
-                <tr><td colspan="5" style="color: var(--ink-400); font-family: var(--font-body);">Belum ada deteksi yang tercatat.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination Controls -->
+    <div style="padding: 15px; border-top: 1px solid var(--stroke, #ddd); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 14px; color: var(--ink-500);">
+            Halaman <span id="current-page">1</span> dari <span id="total-pages">1</span> | 
+            Menampilkan <span id="page-start">0</span>-<span id="page-end">0</span> dari {{ logs|length }} total
+        </div>
+        <div style="display: flex; gap: 5px;">
+            <button onclick="previousPage()" class="btn" style="padding: 6px 12px; background-color: #999; color: white;">← Sebelumnya</button>
+            <div id="page-numbers" style="display: flex; gap: 3px;"></div>
+            <button onclick="nextPage()" class="btn" style="padding: 6px 12px; background-color: #4a90e2; color: white;">Selanjutnya →</button>
+        </div>
+    </div>
 </div>
+{% else %}
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <h2>Riwayat Deteksi</h2>
+            <div class="panel-hint">Belum ada data</div>
+        </div>
+    </div>
+    <div style="padding: 20px; text-align: center; color: var(--ink-400);">
+        Belum ada deteksi yang tercatat.
+    </div>
+</div>
+{% endif %}
 
 <!-- Modal for image preview -->
 <div id="image-modal" class="image-modal" onclick="closeImageModal(event)">
@@ -102,6 +158,205 @@
 
 {% block extra_scripts %}
 <script>
+const ROWS_PER_PAGE = 10;
+let allLogs = [];
+let currentPage = 1;
+let filteredLogs = [];
+let isFiltered = false;
+
+// Store all log data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    allLogs = Array.from(document.querySelectorAll('.log-row'));
+    filteredLogs = allLogs;
+    
+    // Populate dropdowns with unique values from data
+    populateCameraDropdown();
+    populateDetailDropdown();
+    
+    initPagination();
+});
+
+function populateCameraDropdown() {
+    const cameraSet = new Set();
+    allLogs.forEach(row => {
+        const cam = row.getAttribute('data-cam');
+        if (cam) {
+            cameraSet.add(cam);
+        }
+    });
+    
+    const cameraDropdown = document.getElementById('filter-camera');
+    const cameras = Array.from(cameraSet).sort();
+    
+    cameras.forEach(cam => {
+        const option = document.createElement('option');
+        option.value = cam;
+        option.textContent = `CAM ${cam}`;
+        cameraDropdown.appendChild(option);
+    });
+}
+
+function populateDetailDropdown() {
+    const detailSet = new Set();
+    allLogs.forEach(row => {
+        const detail = row.getAttribute('data-detail');
+        if (detail) {
+            detailSet.add(detail);
+        }
+    });
+    
+    const detailDropdown = document.getElementById('filter-detail');
+    const details = Array.from(detailSet).sort();
+    
+    details.forEach(detail => {
+        const option = document.createElement('option');
+        option.value = detail;
+        option.textContent = detail.charAt(0).toUpperCase() + detail.slice(1);
+        detailDropdown.appendChild(option);
+    });
+}
+
+function initPagination() {
+    displayPage(1);
+}
+
+function displayPage(pageNum) {
+    currentPage = pageNum;
+    const totalPages = Math.ceil(filteredLogs.length / ROWS_PER_PAGE);
+    
+    if (pageNum < 1) currentPage = 1;
+    if (pageNum > totalPages) currentPage = totalPages;
+    
+    // Hide all rows
+    allLogs.forEach(row => row.style.display = 'none');
+    
+    // Show rows for current page
+    const start = (currentPage - 1) * ROWS_PER_PAGE;
+    const end = start + ROWS_PER_PAGE;
+    
+    for (let i = start; i < end && i < filteredLogs.length; i++) {
+        filteredLogs[i].style.display = '';
+    }
+    
+    // Update pagination info
+    document.getElementById('current-page').textContent = currentPage;
+    document.getElementById('total-pages').textContent = totalPages || 1;
+    document.getElementById('page-start').textContent = filteredLogs.length > 0 ? start + 1 : 0;
+    document.getElementById('page-end').textContent = Math.min(end, filteredLogs.length);
+    
+    // Update page numbers
+    updatePageNumbers(totalPages);
+    
+    // Scroll to top of table
+    document.querySelector('.log-table-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function updatePageNumbers(totalPages) {
+    const pageNumbersDiv = document.getElementById('page-numbers');
+    pageNumbersDiv.innerHTML = '';
+    
+    const maxButtons = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.style.padding = '6px 10px';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.cursor = 'pointer';
+        btn.style.fontSize = '13px';
+        
+        if (i === currentPage) {
+            btn.style.backgroundColor = '#4a90e2';
+            btn.style.color = 'white';
+            btn.style.fontWeight = 'bold';
+        } else {
+            btn.style.backgroundColor = '#f0f0f0';
+            btn.style.color = '#333';
+        }
+        
+        btn.onclick = () => displayPage(i);
+        pageNumbersDiv.appendChild(btn);
+    }
+}
+
+function nextPage() {
+    const totalPages = Math.ceil(filteredLogs.length / ROWS_PER_PAGE);
+    if (currentPage < totalPages) {
+        displayPage(currentPage + 1);
+    }
+}
+
+function previousPage() {
+    if (currentPage > 1) {
+        displayPage(currentPage - 1);
+    }
+}
+
+function applyFilters() {
+    const filterDate = document.getElementById('filter-date').value;
+    const filterCamera = document.getElementById('filter-camera').value;
+    const filterDetail = document.getElementById('filter-detail').value;
+    const filterStatus = document.getElementById('filter-status');
+    
+    if (!filterDate && !filterCamera && !filterDetail) {
+        filterStatus.textContent = '⚠️ Silakan pilih tanggal, kamera, atau jenis deteksi terlebih dahulu';
+        filterStatus.style.color = '#ff9800';
+        return;
+    }
+    
+    filteredLogs = allLogs.filter(row => {
+        const rowDate = row.getAttribute('data-date');
+        const rowCam = row.getAttribute('data-cam');
+        const rowDetail = row.getAttribute('data-detail');
+        
+        let dateMatch = !filterDate || rowDate === filterDate;
+        let cameraMatch = !filterCamera || rowCam === filterCamera;
+        let detailMatch = !filterDetail || rowDetail === filterDetail;
+        
+        return dateMatch && cameraMatch && detailMatch;
+    });
+    
+    isFiltered = true;
+    
+    if (filteredLogs.length === 0) {
+        let filterParts = [];
+        if (filterDate) filterParts.push(`tanggal ${filterDate}`);
+        if (filterCamera) filterParts.push(`kamera CAM ${filterCamera}`);
+        if (filterDetail) filterParts.push(`jenis ${filterDetail}`);
+        let filterText = filterParts.join(', ');
+        filterStatus.textContent = `📭 Tidak ada deteksi dengan filter ${filterText}`;
+        filterStatus.style.color = '#999';
+    } else {
+        let filterParts = [];
+        if (filterDate) filterParts.push(`tanggal ${filterDate}`);
+        if (filterCamera) filterParts.push(`kamera CAM ${filterCamera}`);
+        if (filterDetail) filterParts.push(`jenis ${filterDetail}`);
+        let filterText = filterParts.join(', ');
+        filterStatus.textContent = `✅ Menampilkan ${filteredLogs.length} deteksi dengan filter ${filterText}`;
+        filterStatus.style.color = '#4caf50';
+    }
+    
+    displayPage(1);
+}
+
+function resetFilters() {
+    document.getElementById('filter-date').value = '';
+    document.getElementById('filter-camera').value = '';
+    document.getElementById('filter-detail').value = '';
+    document.getElementById('filter-status').textContent = '';
+    
+    filteredLogs = allLogs;
+    isFiltered = false;
+    displayPage(1);
+}
+
 function openImageModal(button) {
     const modal = document.getElementById('image-modal');
     const img = document.getElementById('image-modal-img');
