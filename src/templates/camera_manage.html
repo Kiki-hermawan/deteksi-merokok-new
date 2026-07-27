@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Manajemen Kamera{% endblock %}
+{% set active_page = 'cameras' %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <div class="breadcrumb">Ruang Kendali <span class="sep">/</span> <span class="current">Manajemen Kamera</span></div>
+        <h1>Manajemen Kamera</h1>
+        <div class="topbar-sub">Tambah, ubah, atau hapus sumber kamera pemantauan</div>
+    </div>
+</div>
+
+<div class="panel" style="margin-bottom: 20px;">
+    <div class="panel-header">
+        <div>
+            <h2>Tambah Kamera Baru</h2>
+            <div class="panel-hint">Webcam lokal (indeks perangkat) atau stream RTSP/HTTP</div>
+        </div>
+    </div>
+    <form method="POST" action="{{ url_for('camera_admin.add') }}" style="padding: 18px 20px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px;">
+            <div class="field">
+                <label for="name">Nama kamera</label>
+                <input type="text" id="name" name="name" required placeholder="Kantin Lantai 2">
+            </div>
+            <div class="field">
+                <label for="source_type">Tipe sumber</label>
+                <select id="source_type" name="source_type" required style="width:100%; padding:10px 12px; border:1px solid var(--line-strong); border-radius: var(--radius-sm);">
+                    <option value="local">Webcam lokal</option>
+                    <option value="rtsp">RTSP</option>
+                    <option value="http">HTTP/MJPEG</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="source_value">Alamat / indeks</label>
+                <input type="text" id="source_value" name="source_value" required
+                    placeholder="0  atau  rtsp://192.168.1.10:554/stream">
+                <div class="field-hint">Webcam lokal: isi angka indeks (0, 1, dst). RTSP/HTTP: isi URL lengkap.</div>
+            </div>
+            <div class="field">
+                <label for="username">Username RTSP (opsional)</label>
+                <input type="text" id="username" name="username">
+            </div>
+            <div class="field">
+                <label for="password">Password RTSP (opsional)</label>
+                <input type="password" id="password" name="password">
+            </div>
+            <div class="field">
+                <label for="width">Lebar (px)</label>
+                <input type="number" id="width" name="width" value="1280">
+            </div>
+            <div class="field">
+                <label for="height">Tinggi (px)</label>
+                <input type="number" id="height" name="height" value="720">
+            </div>
+            <div class="field">
+                <label for="fps">FPS</label>
+                <input type="number" id="fps" name="fps" value="15">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Tambah Kamera</button>
+    </form>
+</div>
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>Daftar Kamera</h2>
+    </div>
+    <div class="log-table-wrap">
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Tipe</th>
+                    <th>Sumber</th>
+                    <th>Resolusi</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cam in cameras %}
+                <tr>
+                    <td>{{ cam.name }}</td>
+                    <td>{{ cam.source_type }}</td>
+                    <td>{{ cam.source_value }}</td>
+                    <td>{{ cam.width }}x{{ cam.height }} @{{ cam.fps }}fps</td>
+                    <td class="proof-actions">
+                        <button type="button" class="btn btn-small" onclick="testCamera({{ cam.id }})">Tes Koneksi</button>
+                        <button type="button" class="btn btn-small" onclick="toggleEditForm({{ cam.id }})">Edit</button>
+                        <form method="POST" action="{{ url_for('camera_admin.delete', camera_id=cam.id) }}"
+                            onsubmit="return confirm('Hapus kamera {{ cam.name }}?');" style="display:inline;">
+                            <button type="submit" class="btn btn-small" style="color: var(--danger-600); border-color: var(--danger-600);">Hapus</button>
+                        </form>
+                        <span id="test-result-{{ cam.id }}"></span>
+                    </td>
+                </tr>
+                <tr id="edit-row-{{ cam.id }}" style="display:none;">
+                    <td colspan="5">
+                        <form method="POST" action="{{ url_for('camera_admin.edit', camera_id=cam.id) }}"
+                            style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; padding: 10px 0;">
+                            <div class="field" style="margin-bottom:0;">
+                                <label>Nama</label>
+                                <input type="text" name="name" value="{{ cam.name }}" required>
+                            </div>
+                            <div class="field" style="margin-bottom:0;">
+                                <label>Tipe</label>
+                                <select name="source_type">
+                                    <option value="local" {{ 'selected' if cam.source_type=='local' }}>Lokal</option>
+                                    <option value="rtsp" {{ 'selected' if cam.source_type=='rtsp' }}>RTSP</option>
+                                    <option value="http" {{ 'selected' if cam.source_type=='http' }}>HTTP</option>
+                                </select>
+                            </div>
+                            <div class="field" style="margin-bottom:0;">
+                                <label>Sumber</label>
+                                <input type="text" name="source_value" value="{{ cam.source_value }}" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-small">Simpan</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="color: var(--ink-400);">Belum ada kamera terdaftar.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleEditForm(id) {
+    const row = document.getElementById(`edit-row-${id}`);
+    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+}
+
+async function testCamera(id) {
+    const resultEl = document.getElementById(`test-result-${id}`);
+    resultEl.textContent = 'Menguji…';
+    try {
+        const res = await fetch(`/cameras/${id}/test`, { method: 'POST', credentials: 'same-origin' });
+        const data = await res.json();
+        resultEl.textContent = data.success ? '✅ Terhubung' : '❌ Gagal';
+    } catch (err) {
+        resultEl.textContent = '❌ Error';
+    }
+}
+</script>
+{% endblock %}

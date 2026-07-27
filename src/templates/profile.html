@@ -11,22 +11,127 @@
     </div>
 </div>
 
-<div class="panel profile-card">
-    <div class="profile-row">
-        <span>Nama pengguna</span>
-        <span>{{ user.username }}</span>
+<div style="display:grid; grid-template-columns: 260px 1fr; gap:20px; align-items:start;">
+
+    <div class="panel" style="padding: 22px; text-align:center;">
+        {% if user.avatar_filename %}
+        <img src="{{ url_for('static', filename='avatars/' ~ user.avatar_filename) }}"
+             alt="Avatar" style="width:96px; height:96px; border-radius:50%; object-fit:cover; margin-bottom:12px;">
+        {% else %}
+        <div style="width:96px; height:96px; border-radius:50%; background:var(--ink-900); color:#fff;
+             display:flex; align-items:center; justify-content:center; font-family:var(--font-display);
+             font-size:28px; font-weight:700; margin: 0 auto 12px;">
+            {{ user.username[:2] | upper }}
+        </div>
+        {% endif %}
+        <strong style="display:block; font-size:15px;">{{ user.username }}</strong>
+        <span style="font-size:12px; color:var(--ink-400);">Operator</span>
+
+        <form method="POST" action="{{ url_for('auth.update_avatar') }}" enctype="multipart/form-data" style="margin-top:16px;">
+            <input type="file" name="avatar" accept=".png,.jpg,.jpeg,.webp" required
+                   style="font-size:12px; margin-bottom:8px; width:100%;">
+            <button type="submit" class="btn btn-primary btn-block">Ganti Foto</button>
+        </form>
     </div>
-    <div class="profile-row">
-        <span>ID pengguna</span>
-        <span>#{{ '%04d' % user.id }}</span>
-    </div>
-    <div class="profile-row">
-        <span>Peran</span>
-        <span>Operator</span>
+
+    <div style="display:flex; flex-direction:column; gap:20px;">
+        <div class="panel profile-card" style="max-width:none;">
+            <div class="profile-row">
+                <span>Nama pengguna</span>
+                <span>{{ user.username }}</span>
+            </div>
+            <div class="profile-row">
+                <span>ID pengguna</span>
+                <span>#{{ '%04d' % user.id }}</span>
+            </div>
+            <div class="profile-row">
+                <span>Peran</span>
+                <span>Operator</span>
+            </div>
+            {% if user.created_at %}
+            <div class="profile-row">
+                <span>Bergabung sejak</span>
+                <span>{{ user.created_at.strftime('%d %b %Y') }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="panel" style="padding: 20px;">
+            <h2 style="margin-bottom: 16px;">Ganti Kata Sandi</h2>
+            <form method="POST" action="{{ url_for('auth.update_password') }}" id="changePasswordForm" novalidate>
+                <div class="field">
+                    <label for="current_password">Kata sandi saat ini</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="current_password" name="current_password" required>
+                        <button type="button" class="toggle-password" data-target="current_password" aria-label="Tampilkan kata sandi">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="new_password">Kata sandi baru</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="new_password" name="new_password" required minlength="8">
+                        <button type="button" class="toggle-password" data-target="new_password" aria-label="Tampilkan kata sandi">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="field-hint">Minimal 8 karakter.</div>
+                </div>
+                <div class="field">
+                    <label for="confirm_password">Konfirmasi kata sandi baru</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirm_password" name="confirm_password" required>
+                        <button type="button" class="toggle-password" data-target="confirm_password" aria-label="Tampilkan kata sandi">
+                            <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="field-error">Kata sandi tidak cocok.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Perbarui Kata Sandi</button>
+            </form>
+        </div>
     </div>
 </div>
 
 <div style="margin-top: 16px;">
-    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Kembali ke Dashboard</a>
+    <a href="{{ url_for('main.index') }}" class="btn">Kembali ke Dashboard</a>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/toggle-password.js') }}"></script>
+<script>
+(function () {
+    const form = document.getElementById('changePasswordForm');
+    const newPass = document.getElementById('new_password');
+    const confirmPass = document.getElementById('confirm_password');
+
+    function validateConfirm() {
+        const field = confirmPass.closest('.field');
+        const ok = confirmPass.value.length > 0 && confirmPass.value === newPass.value;
+        field.classList.toggle('has-error', confirmPass.value.length > 0 && !ok);
+        return ok;
+    }
+
+    confirmPass.addEventListener('input', validateConfirm);
+    newPass.addEventListener('input', () => { if (confirmPass.value) validateConfirm(); });
+
+    form.addEventListener('submit', (e) => {
+        if (!validateConfirm()) {
+            e.preventDefault();
+            confirmPass.focus();
+        }
+    });
+})();
+</script>
 {% endblock %}

@@ -172,7 +172,10 @@ function initAlarm() {
     return;
   }
 
-  let muted = localStorage.getItem("alarm-muted") === "true";
+  const savedVolume = parseFloat(alarm.dataset.volume);
+  const baseVolume = isNaN(savedVolume) ? 1.0 : savedVolume;
+
+  let muted = localStorage.getItem("alarm-muted") === "false";
   let audioUnlocked = false;
   let lastAlarmTime = 0;
   let alarmReady = false;
@@ -193,7 +196,7 @@ function initAlarm() {
         .then(() => {
           alarm.pause();
           alarm.currentTime = 0;
-          alarm.volume = 1.0;
+          alarm.volume = baseVolume;
           audioUnlocked = true;
           console.log("Audio unlocked");
         })
@@ -220,7 +223,7 @@ function initAlarm() {
       unlockAudio();
       // Play a short test beep so the user knows it works.
       alarm.currentTime = 0;
-      alarm.volume = 1.0;
+      alarm.volume = baseVolume;
       alarm.play().catch((err) => console.warn("Test beep blocked:", err));
     }
   });
@@ -253,7 +256,7 @@ function initAlarm() {
     }
 
     alarm.currentTime = 0;
-    alarm.volume = 1.0;
+    alarm.volume = baseVolume;
     const playPromise = alarm.play();
     if (playPromise !== undefined) {
       playPromise.catch((err) => {
@@ -380,26 +383,50 @@ function initLiveLog() {
   let firstLoad = true;
 
   function updateLogStats(rows) {
-    const totalEl = document.getElementById("stat-detections-total");
-    const todayEl = document.getElementById("stat-detections-today");
-    if (totalEl) totalEl.textContent = rows.length;
-    if (todayEl) {
-      const today = new Date();
-      const isToday = (cellText) => {
-        const d = new Date(cellText.replace(" ", "T"));
-        return (
-          d.getFullYear() === today.getFullYear() &&
-          d.getMonth() === today.getMonth() &&
-          d.getDate() === today.getDate()
-        );
-      };
-      const count = rows.filter((row) => {
-        const cell = row.querySelector("td");
-        return cell && isToday(cell.textContent.trim());
-      }).length;
-      todayEl.textContent = count;
+  const totalEl = document.getElementById("stat-detections-total");
+  const todayEl = document.getElementById("stat-detections-today");
+  const avgEl = document.getElementById("stat-avg-confidence"); // BARU
+
+  if (totalEl) totalEl.textContent = rows.length;
+  if (todayEl) {
+    const today = new Date();
+    const isToday = (cellText) => {
+      const d = new Date(cellText.replace(" ", "T"));
+      return (
+        d.getFullYear() === today.getFullYear() &&
+        d.getMonth() === today.getMonth() &&
+        d.getDate() === today.getDate()
+      );
+    };
+    const count = rows.filter((row) => {
+      const cell = row.querySelector("td");
+      return cell && isToday(cell.textContent.trim());
+    }).length;
+    todayEl.textContent = count;
+  }
+
+  // BARU: hitung rata-rata keyakinan dari kolom "Keyakinan" (td index ke-3)
+  if (avgEl) {
+    const values = rows
+      .map((row) => {
+        const tds = row.querySelectorAll("td");
+        if (tds.length < 4) return null;
+        const raw = tds[3].textContent.trim().replace("%", "").replace(",", ".");
+        const num = parseFloat(raw);
+        if (isNaN(num)) return null;
+        // Jika nilainya berupa desimal (0.85) bukan persen (85), ubah ke persen
+        return num <= 1 ? num * 100 : num;
+      })
+      .filter((v) => v !== null);
+
+    if (values.length > 0) {
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      avgEl.textContent = avg.toFixed(1) + "%";
+    } else {
+      avgEl.textContent = "–";
     }
   }
+}
 
   async function refresh() {
     try {

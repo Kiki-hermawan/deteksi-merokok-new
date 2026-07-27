@@ -123,13 +123,14 @@ def detection_log_worker(app):
 
 
 class Camera:
-    def __init__(self, source, name, width=1280, height=720, fps=30, rtsp_transport='tcp'):
+    def __init__(self, source, name, width=1280, height=720, fps=30, rtsp_transport='tcp', db_id=None):
         self.source = source
         self.name = name
         self.width = width
         self.height = height
         self.fps = fps
         self.rtsp_transport = rtsp_transport
+        self.db_id = db_id          # <-- BARU: id dari tabel cameras
         self.latest_frame = np.zeros((480, 640, 3), dtype=np.uint8)
         self.frame_lock = threading.Lock()
         self.running = False

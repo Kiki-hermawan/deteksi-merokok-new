@@ -412,7 +412,7 @@ button, input { font-family: inherit; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 13px;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent);
-  z-index: 5;
+  z-index: 10;   /* naikkan dari 5 → 10, di atas overlay (6) */
 }
 
 .camera-name { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: #fff; }
@@ -456,18 +456,20 @@ button, input { font-family: inherit; }
 }
 
 .power-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(46, 204, 113, 0.6);
-    background: rgba(46, 204, 113, 0.15);
-    color: #2ecc71;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    padding: 0;
+  position: relative;
+  z-index: 11;      /* tambahkan baris ini */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(46, 204, 113, 0.6);
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
 }
 .power-btn svg { width: 13px; height: 13px; }
 .power-btn:hover { background: rgba(46, 204, 113, 0.28); }
@@ -874,3 +876,37 @@ table.log-table tr.is-new td { animation: row-flash 1.8s ease-out; }
   font-family: var(--font-mono);
   color: var(--ink-900);
 }
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 44px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #8a8a8a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    transition: color 0.15s ease;
+}
+
+.toggle-password:hover {
+    color: #333;
+}
+
+.toggle-password:focus {
+    outline: none;
+}
+

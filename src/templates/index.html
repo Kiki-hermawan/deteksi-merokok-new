@@ -21,7 +21,7 @@
 </div>
 
 <!-- Audio alarm: dipicu otomatis saat log deteksi baru masuk -->
-<audio id="alarm-sound" src="{{ url_for('static', filename='audio/alarm.mp3') }}" preload="auto"></audio>
+<audio id="alarm-sound" src="{{ url_for('static', filename='audio/presets/alarm.mp3') }}" preload="auto"></audio>
 
 <div class="stat-row">
     <div class="stat-card">
@@ -95,19 +95,20 @@
             <h2>Kamera Langsung</h2>
             <div class="panel-hint">Stream otomatis tersambung ulang bila terputus</div>
         </div>
+        <a href="{{ url_for('camera_admin.manage') }}" class="btn">Kelola Kamera</a>
     </div>
 
     {% if cameras %}
     <div class="camera-grid">
         {% for camera in cameras %}
-        <div class="camera-tile" id="camera-container-{{ loop.index0 }}" data-camera-id="{{ loop.index0 }}"
+        <div class="camera-tile" id="camera-container-{{ camera.id }}" data-camera-id="{{ camera.id }}"
             data-initial-state="{{ 'off' if not camera.running else 'on' }}">
             <div class="camera-hud-top">
                 <span class="camera-name">{{ camera.name }}</span>
                 <div class="camera-hud-controls">
-                    <span class="rec-indicator" id="rec-{{ loop.index0 }}"><span class="rec-dot"></span>LIVE</span>
-                    <button class="power-btn {{ 'is-off' if not camera.running }}" id="toggle-{{ loop.index0 }}"
-                        data-camera-id="{{ loop.index0 }}" type="button" title="Nyalakan/Matikan kamera">
+                    <span class="rec-indicator" id="rec-{{ camera.id }}"><span class="rec-dot"></span>LIVE</span>
+                    <button class="power-btn {{ 'is-off' if not camera.running }}" id="toggle-{{ camera.id }}"
+                        data-camera-id="{{ camera.id }}" type="button" title="Nyalakan/Matikan kamera">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round">
                             <path d="M12 2v8" />
@@ -118,13 +119,13 @@
             </div>
             <span class="bracket-tr"></span>
             <span class="bracket-bl"></span>
-            <img class="camera-feed" id="feed-{{ loop.index0 }}"
-                data-src="{{ url_for('main.video_feed', camera_id=loop.index0) }}" alt="Stream {{ camera.name }}">
+            <img class="camera-feed" id="feed-{{ camera.id }}"
+                data-src="{{ url_for('main.video_feed', camera_id=camera.id) }}" alt="Stream {{ camera.name }}">
             <div class="camera-hud-bottom">
-                <span>CAM-{{ '%02d' % loop.index0 }}</span>
-                <span id="feedstamp-{{ loop.index0 }}"></span>
+                <span>CAM-{{ '%02d' % camera.id }}</span>
+                <span id="feedstamp-{{ camera.id }}"></span>
             </div>
-            <div class="camera-overlay-msg" id="loading-{{ loop.index0 }}">
+            <div class="camera-overlay-msg" id="loading-{{ camera.id }}">
                 <div class="spinner"></div>
                 <span class="overlay-text">Menghubungkan…</span>
             </div>

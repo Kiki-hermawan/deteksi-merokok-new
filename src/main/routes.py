@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, Response, send_file, abort, jsonify
+from flask import Blueprint, render_template, Response, send_file, abort, jsonify, url_for
 from flask_login import login_required, current_user
 import cv2
 import time
@@ -6,7 +6,7 @@ import os
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.sql import text
-from src.models import DetectionLog
+from src.models import DetectionLog, AlarmSetting  # tambahkan AlarmSetting
 from src.camera.camera_manager import processor
 
 main = Blueprint('main', __name__)
@@ -15,13 +15,17 @@ main = Blueprint('main', __name__)
 @login_required
 def index():
     cameras_view = [
-        {
-            'name': cam.name,
-            'running': cam.running,
-        }
+        {'id': cam.db_id, 'name': cam.name, 'running': cam.running}
         for cam in processor.cameras
     ]
-    return render_template('index.html', cameras=cameras_view, name=current_user.username)
+    alarm_setting = AlarmSetting.get_current()
+    return render_template(
+        'index.html',
+        cameras=cameras_view,
+        name=current_user.username,
+        alarm_sound_url=url_for('static', filename=alarm_setting.sound_path),
+        alarm_volume=alarm_setting.volume,
+    )
 
 @main.route('/detection_log')
 @login_required

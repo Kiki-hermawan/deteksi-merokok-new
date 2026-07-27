@@ -1,0 +1,28 @@
+<td class="proof-actions">
+    {% if not u.is_approved %}
+        <span class="badge badge-danger" style="margin-right:6px;">Menunggu Persetujuan</span>
+        <form method="POST" action="{{ url_for('user_admin.approve_user', user_id=u.id) }}" style="display:inline;">
+            <button type="submit" class="btn btn-small btn-primary">Setujui</button>
+        </form>
+        <form method="POST" action="{{ url_for('user_admin.reject_user', user_id=u.id) }}"
+            onsubmit="return confirm('Tolak dan hapus pendaftaran {{ u.username }}?');" style="display:inline;">
+            <button type="submit" class="btn btn-small" style="color: var(--danger-600); border-color: var(--danger-600);">Tolak</button>
+        </form>
+    {% else %}
+        {% if u.id != current_user.id %}
+        <form method="POST" action="{{ url_for('user_admin.change_role', user_id=u.id) }}" style="display:inline;">
+            <input type="hidden" name="role" value="{{ 'operator' if u.role == 'admin' else 'admin' }}">
+            <button type="submit" class="btn btn-small">
+                Jadikan {{ 'Operator' if u.role == 'admin' else 'Admin' }}
+            </button>
+        </form>
+        {% endif %}
+        <button type="button" class="btn btn-small" onclick="toggleResetForm({{ u.id }})">Reset Sandi</button>
+        {% if u.id != current_user.id %}
+        <form method="POST" action="{{ url_for('user_admin.delete_user', user_id=u.id) }}"
+            onsubmit="return confirm('Hapus pengguna {{ u.username }}?');" style="display:inline;">
+            <button type="submit" class="btn btn-small" style="color: var(--danger-600); border-color: var(--danger-600);">Hapus</button>
+        </form>
+        {% endif %}
+    {% endif %}
+</td>

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Manajemen Alarm{% endblock %}
+{% set active_page = 'alarm' %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <div class="breadcrumb">Ruang Kendali <span class="sep">/</span> <span class="current">Manajemen Alarm</span></div>
+        <h1>Manajemen Alarm</h1>
+        <div class="topbar-sub">Atur suara notifikasi saat pelanggaran terdeteksi</div>
+    </div>
+</div>
+
+<div class="panel" style="margin-bottom: 20px;">
+    <div class="panel-header">
+        <h2>Pilih Preset Suara</h2>
+    </div>
+    <form method="POST" action="{{ url_for('alarm_admin.select_preset') }}" style="padding: 18px 20px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            {% for preset in presets %}
+            <label style="display:flex; align-items:center; gap:10px; font-size:13.5px;">
+                <input type="radio" name="preset_filename" value="{{ preset }}"
+                    {{ 'checked' if setting.sound_source=='preset' and setting.sound_filename==preset }}>
+                {{ preset }}
+                <audio controls src="{{ url_for('static', filename='audio/presets/' ~ preset) }}" style="height:28px;"></audio>
+            </label>
+            {% else %}
+            <span style="color: var(--ink-400);">Belum ada file preset di static/audio/presets/.</span>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-top:14px;">Gunakan Preset Ini</button>
+    </form>
+</div>
+
+<div class="panel" style="margin-bottom: 20px;">
+    <div class="panel-header">
+        <h2>Unggah Suara Sendiri</h2>
+        <div class="panel-hint">Format mp3, wav, atau ogg</div>
+    </div>
+    <form method="POST" action="{{ url_for('alarm_admin.upload_custom') }}" enctype="multipart/form-data" style="padding: 18px 20px;">
+        <div class="field">
+            <label for="sound_file">File suara</label>
+            <input type="file" id="sound_file" name="sound_file" accept=".mp3,.wav,.ogg" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Unggah & Aktifkan</button>
+    </form>
+</div>
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>Volume</h2>
+    </div>
+    <form method="POST" action="{{ url_for('alarm_admin.set_volume') }}" style="padding: 18px 20px; display:flex; gap:14px; align-items:center;">
+        <input type="range" name="volume" min="0" max="1" step="0.05" value="{{ setting.volume }}">
+        <button type="submit" class="btn">Simpan Volume</button>
+    </form>
+</div>
+
+<div class="panel" style="margin-top:20px; padding: 18px 20px;">
+    <strong>Suara aktif saat ini:</strong>
+    <audio controls src="{{ url_for('static', filename=setting.sound_path) }}"></audio>
+</div>
+{% endblock %}

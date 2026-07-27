@@ -45,17 +45,44 @@
                 {% endif %}
                 {% endwith %}
 
-                <form method="POST" action="{{ url_for('auth.register') }}">
+                <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm" novalidate>
                     <div class="field">
                         <label for="username">Nama pengguna</label>
-                        <input type="text" id="username" name="username" required autofocus>
+                        <input type="text" id="username" name="username" required autofocus minlength="4" pattern="^[A-Za-z0-9_]+$">
                         <div class="field-hint">Minimal 4 karakter — huruf, angka, atau underscore.</div>
+                        <div class="field-error">Nama pengguna minimal 4 karakter (huruf, angka, underscore).</div>
                     </div>
+
                     <div class="field">
                         <label for="password">Kata sandi</label>
-                        <input type="password" id="password" name="password" required>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" required minlength="8">
+                            <button type="button" class="toggle-password" data-target="password" aria-label="Tampilkan kata sandi">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
                         <div class="field-hint">Minimal 8 karakter.</div>
+                        <div class="field-error">Kata sandi minimal 8 karakter.</div>
                     </div>
+
+                    <div class="field">
+                        <label for="password_confirm">Konfirmasi kata sandi</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password_confirm" name="password_confirm" required>
+                            <button type="button" class="toggle-password" data-target="password_confirm" aria-label="Tampilkan kata sandi">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="field-hint">Ulangi kata sandi yang sama persis.</div>
+                        <div class="field-error">Kata sandi tidak cocok.</div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-block">Daftar</button>
                 </form>
 
@@ -65,5 +92,8 @@
             </div>
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/toggle-password.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/register-validate.js') }}"></script>
 </body>
 </html>

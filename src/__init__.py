@@ -47,6 +47,12 @@ def create_app(config_class=Config):
     app.register_blueprint(main_blueprint)
     app.register_blueprint(auth_blueprint)
     app.register_blueprint(api_auth_blueprint)
+    
+    from src.camera_admin import camera_admin
+    from src.alarm_admin import alarm_admin
+
+    app.register_blueprint(camera_admin)
+    app.register_blueprint(alarm_admin)
 
     with app.app_context():
         # Create database tables if they don't exist
@@ -76,7 +82,7 @@ def setup_background_tasks(app):
 
     # Pass the app context to the processor BEFORE setting up cameras
     processor.set_app(app)
-    processor.setup_cameras_from_config()
+    processor.setup_cameras_from_db()
     processor.start()
 
 def notification_worker():
