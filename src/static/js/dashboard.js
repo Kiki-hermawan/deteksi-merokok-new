@@ -175,7 +175,7 @@ function initAlarm() {
   const savedVolume = parseFloat(alarm.dataset.volume);
   const baseVolume = isNaN(savedVolume) ? 1.0 : savedVolume;
 
-  let muted = localStorage.getItem("alarm-muted") === "false";
+  let muted = localStorage.getItem("alarm-muted") === "true";
   let audioUnlocked = false;
   let lastAlarmTime = 0;
   let alarmReady = false;

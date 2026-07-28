@@ -18,10 +18,13 @@
         <span class="status-pill"><span class="dot on"></span>Sistem aktif</span>
         <span class="live-clock" id="live-clock">--:--:--</span>
     </div>
-</div>
+</div>presets/alarm.mp3
 
 <!-- Audio alarm: dipicu otomatis saat log deteksi baru masuk -->
-<audio id="alarm-sound" src="{{ url_for('static', filename='audio/presets/alarm.mp3') }}" preload="auto"></audio>
+<audio id="alarm-sound"
+       src="{{ alarm_sound_url }}"
+       data-volume="{{ alarm_volume }}"
+       preload="auto"></audio>
 
 <div class="stat-row">
     <div class="stat-card">
