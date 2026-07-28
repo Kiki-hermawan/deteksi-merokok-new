@@ -910,3 +910,11 @@ table.log-table tr.is-new td { animation: row-flash 1.8s ease-out; }
     outline: none;
 }
 
+.toggle-password .eye-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    stroke: currentColor;
+    flex-shrink: 0;
+}
+
