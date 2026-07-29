@@ -918,3 +918,53 @@ table.log-table tr.is-new td { animation: row-flash 1.8s ease-out; }
     flex-shrink: 0;
 }
 
+/* =========================================================================
+   Field validation state (error & success)
+   ========================================================================= */
+
+.field-error {
+  display: none;
+  font-size: 11.5px;
+  color: var(--danger-600);
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.field-success {
+  display: none;
+  font-size: 11.5px;
+  color: var(--success-600);
+  margin-top: 5px;
+  font-weight: 500;
+}
+
+.field.has-error input {
+  border-color: var(--danger-600);
+}
+
+.field.has-error input:focus {
+  border-color: var(--danger-600);
+  box-shadow: 0 0 0 3px var(--danger-050);
+}
+
+.field.has-error .field-error {
+  display: block;
+}
+
+.field.has-error .field-hint,
+.field.has-error .field-success {
+  display: none;
+}
+
+.field.is-valid input {
+  border-color: var(--success-600);
+}
+
+.field.is-valid .field-success {
+  display: block;
+}
+
+.field.is-valid .field-hint,
+.field.is-valid .field-error {
+  display: none;
+}

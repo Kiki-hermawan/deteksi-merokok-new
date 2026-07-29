@@ -6,31 +6,30 @@
     const password = document.getElementById('password');
     const confirm = document.getElementById('password_confirm');
 
-    function setError(input, hasError) {
+    function setState(input, isValid, hasValue) {
         const field = input.closest('.field');
-        field.classList.toggle('has-error', hasError);
-        if (!hasError && input.value) {
-            field.classList.add('is-valid');
-        } else {
-            field.classList.remove('is-valid');
-        }
+        field.classList.toggle('has-error', hasValue && !isValid);
+        field.classList.toggle('is-valid', hasValue && isValid);
     }
 
     function validateUsername() {
+        const hasValue = username.value.length > 0;
         const ok = /^[A-Za-z0-9_]{4,}$/.test(username.value);
-        setError(username, username.value.length > 0 && !ok);
+        setState(username, ok, hasValue);
         return ok;
     }
 
     function validatePassword() {
+        const hasValue = password.value.length > 0;
         const ok = password.value.length >= 8;
-        setError(password, password.value.length > 0 && !ok);
+        setState(password, ok, hasValue);
         return ok;
     }
 
     function validateConfirm() {
-        const ok = confirm.value.length > 0 && confirm.value === password.value;
-        setError(confirm, confirm.value.length > 0 && !ok);
+        const hasValue = confirm.value.length > 0;
+        const ok = hasValue && confirm.value === password.value;
+        setState(confirm, ok, hasValue);
         return ok;
     }
 
