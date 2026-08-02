@@ -45,13 +45,16 @@
                 {% endif %}
                 {% endwith %}
 
-                <form method="POST" action="{{ url_for('auth.login') }}">
-                    <div class="field">
+                <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" novalidate>
+                    <div class="field {{ 'has-error' if login_failed }}">
                         <label for="username">Nama pengguna</label>
-                        <input type="text" id="username" name="username" required autofocus>
+                        <input type="text" id="username" name="username" required autofocus
+                               value="{{ submitted_username or '' }}">
+                        <div class="field-error">Nama pengguna atau kata sandi salah.</div>
+                        <div class="field-success">✓ Terisi.</div>
                     </div>
 
-                    <div class="field">
+                    <div class="field {{ 'has-error' if login_failed }}">
                         <label for="password">Kata sandi</label>
                         <div class="password-wrapper">
                             <input type="password" id="password" name="password" required>
@@ -62,6 +65,8 @@
                                 </svg>
                             </button>
                         </div>
+                        <div class="field-error">Kata sandi salah.</div>
+                        <div class="field-success">✓ Terisi.</div>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block">Masuk</button>
@@ -75,5 +80,6 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/toggle-password.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/login-validate.js') }}"></script>
 </body>
 </html>

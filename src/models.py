@@ -1,5 +1,7 @@
+import secrets
 from datetime import datetime
 from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 
 class DetectionLog(db.Model):
@@ -28,9 +30,44 @@ class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
     avatar_filename = db.Column(db.String(255), nullable=True)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    otp_codes = db.relationship('EmailOTP', backref='user', lazy=True, cascade='all, delete-orphan')
+
+
+class EmailOTP(db.Model):
+    """Menyimpan kode OTP (One-Time Password) yang dikirim lewat email untuk verifikasi akun."""
+    __tablename__ = 'email_otps'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    purpose = db.Column(db.String(20), nullable=False, default='register')  # 'register' (dapat diperluas: 'login', dll.)
+    code_hash = db.Column(db.String(256), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
+    max_attempts = db.Column(db.Integer, default=5, nullable=False)
+    is_used = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @staticmethod
+    def generate_code(length=6):
+        """Menghasilkan kode numerik acak yang aman secara kriptografis."""
+        upper_bound = 10 ** length
+        return str(secrets.randbelow(upper_bound)).zfill(length)
+
+    def set_code(self, raw_code):
+        self.code_hash = generate_password_hash(raw_code)
+
+    def check_code(self, raw_code):
+        return check_password_hash(self.code_hash, raw_code or '')
+
+    @property
+    def is_expired(self):
+        return datetime.utcnow() > self.expires_at
 
 
 class Camera(db.Model):

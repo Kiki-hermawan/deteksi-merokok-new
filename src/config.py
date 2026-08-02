@@ -43,3 +43,16 @@ class Config:
     TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
     TWILIO_FROM_WHATSAPP = os.getenv('TWILIO_FROM_WHATSAPP')
     TWILIO_TO_WHATSAPP = os.getenv('TWILIO_TO_WHATSAPP')
+
+    # Email / SMTP configuration (dipakai untuk mengirim OTP verifikasi akun)
+    MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.getenv('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'True') == 'True'
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', MAIL_USERNAME)
+
+    # OTP configuration
+    OTP_LENGTH = int(os.getenv('OTP_LENGTH', 6))
+    OTP_EXPIRE_MINUTES = int(os.getenv('OTP_EXPIRE_MINUTES', 5))
+    OTP_RESEND_COOLDOWN_SECONDS = int(os.getenv('OTP_RESEND_COOLDOWN_SECONDS', 60))

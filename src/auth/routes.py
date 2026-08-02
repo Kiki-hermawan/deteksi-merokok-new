@@ -13,18 +13,18 @@ ALLOWED_AVATAR_EXT = {'png', 'jpg', 'jpeg', 'webp'}
 
 @auth.route('/login')
 def login():
-    return render_template('login.html')
+    return render_template('login.html', login_failed=False)
 
 @auth.route('/login', methods=['POST'])
 def login_post():
     username = request.form.get('username')
     password = request.form.get('password')
-    
+
     user = User.query.filter_by(username=username).first()
 
     if not user or not check_password_hash(user.password, password):
-        flash('Please check your login details and try again.')
-        return redirect(url_for('auth.login'))
+        flash('Nama pengguna atau kata sandi salah.')
+        return render_template('login.html', login_failed=True, submitted_username=username)
 
     login_user(user)
     return redirect(url_for('main.index'))
