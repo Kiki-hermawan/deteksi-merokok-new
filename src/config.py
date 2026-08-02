@@ -56,3 +56,6 @@ class Config:
     OTP_LENGTH = int(os.getenv('OTP_LENGTH', 6))
     OTP_EXPIRE_MINUTES = int(os.getenv('OTP_EXPIRE_MINUTES', 5))
     OTP_RESEND_COOLDOWN_SECONDS = int(os.getenv('OTP_RESEND_COOLDOWN_SECONDS', 60))
+
+    # Reset password (lupa kata sandi) configuration
+    RESET_PASSWORD_EXPIRE_MINUTES = int(os.getenv('RESET_PASSWORD_EXPIRE_MINUTES', 30))

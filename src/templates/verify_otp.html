@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifikasi OTP · Ruang Kendali</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .otp-input {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            letter-spacing: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .otp-email-note { font-size: 13px; color: var(--ink-400, #667085); margin-bottom: 18px; }
+        .otp-email-note strong { color: var(--ink-700, #1f2933); }
+        .otp-resend-form { margin-top: 16px; text-align: center; }
+        .otp-resend-btn {
+            background: none; border: none; padding: 0; cursor: pointer;
+            color: var(--accent-600, #2E75B6); font-size: 13px; font-weight: 600;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-side">
+            <div class="auth-side-content">
+                <div class="brand">
+                    <div class="brand-mark">RK</div>
+                    <div class="brand-text">
+                        <strong>Ruang Kendali</strong>
+                        <span>DETEKSI MEROKOK</span>
+                    </div>
+                </div>
+                <h1 class="auth-tagline">Satu langkah lagi, <span class="accent">verifikasi email Anda</span> untuk mengaktifkan akun.</h1>
+
+                <div class="auth-features">
+                    <div class="auth-feature"><span class="auth-feature-index">01</span>Kode OTP dikirim ke email yang Anda daftarkan.</div>
+                    <div class="auth-feature"><span class="auth-feature-index">02</span>Kode berlaku beberapa menit dan hanya sekali pakai.</div>
+                    <div class="auth-feature"><span class="auth-feature-index">03</span>Tidak menerima email? Anda bisa meminta kode baru.</div>
+                </div>
+            </div>
+            <div class="auth-side-footer">SISTEM PEMANTAUAN INTERNAL &middot; AKSES TERBATAS</div>
+        </div>
+
+        <div class="auth-form-col">
+            <div class="auth-card">
+                <h1>Verifikasi OTP</h1>
+                <p class="auth-sub">Masukkan kode 6 digit yang telah kami kirim ke email Anda.</p>
+                <p class="otp-email-note">Kode dikirim ke <strong>{{ email }}</strong></p>
+
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="flash-stack">
+                    {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="{{ url_for('auth.verify_otp_post') }}" novalidate>
+                    <div class="field">
+                        <label for="otp_code">Kode OTP</label>
+                        <input
+                            type="text"
+                            id="otp_code"
+                            name="otp_code"
+                            class="otp-input"
+                            inputmode="numeric"
+                            pattern="\d{6}"
+                            maxlength="6"
+                            autocomplete="one-time-code"
+                            required
+                            autofocus
+                        >
+                        <div class="field-hint">Masukkan 6 digit kode OTP dari email Anda.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Verifikasi</button>
+                </form>
+
+                <form method="POST" action="{{ url_for('auth.resend_otp') }}" class="otp-resend-form">
+                    <button type="submit" class="otp-resend-btn">Tidak menerima kode? Kirim ulang</button>
+                </form>
+
+                <div class="auth-switch">
+                    Salah akun? <a href="{{ url_for('auth.register') }}">Daftar ulang</a> atau <a href="{{ url_for('auth.login') }}">kembali ke login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -24,7 +24,7 @@
                 <div class="auth-features">
                     <div class="auth-feature"><span class="auth-feature-index">01</span>Nama pengguna minimal 4 karakter, huruf/angka/underscore.</div>
                     <div class="auth-feature"><span class="auth-feature-index">02</span>Kata sandi minimal 8 karakter.</div>
-                    <div class="auth-feature"><span class="auth-feature-index">03</span>Akses langsung ke dashboard setelah masuk.</div>
+                    <div class="auth-feature"><span class="auth-feature-index">03</span>Verifikasi email dengan kode OTP sebelum akun aktif.</div>
                 </div>
             </div>
             <div class="auth-side-footer">SISTEM PEMANTAUAN INTERNAL &middot; AKSES TERBATAS</div>
@@ -52,6 +52,14 @@
                         <div class="field-hint">Minimal 4 karakter — huruf, angka, atau underscore.</div>
                         <div class="field-error">Nama pengguna minimal 4 karakter (huruf, angka, underscore).</div>
                         <div class="field-success">✓ Nama pengguna valid.</div>
+                    </div>
+
+                    <div class="field">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                        <div class="field-hint">Kode OTP untuk verifikasi akun akan dikirim ke email ini.</div>
+                        <div class="field-error">Format email tidak valid.</div>
+                        <div class="field-success">✓ Email valid.</div>
                     </div>
 
                     <div class="field">
