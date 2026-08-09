@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar · Ruang Kendali</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
     <div class="auth-shell">
         <div class="auth-side">
@@ -19,12 +23,16 @@
                         <span>DETEKSI MEROKOK</span>
                     </div>
                 </div>
-                <h1 class="auth-tagline">Satu akun operator, <span class="accent">akses ke seluruh kamera</span> pemantauan.</h1>
+                <h1 class="auth-tagline">Satu akun operator, <span class="accent">akses ke seluruh kamera</span>
+                    pemantauan.</h1>
 
                 <div class="auth-features">
-                    <div class="auth-feature"><span class="auth-feature-index">01</span>Nama pengguna minimal 4 karakter, huruf/angka/underscore.</div>
-                    <div class="auth-feature"><span class="auth-feature-index">02</span>Kata sandi minimal 8 karakter.</div>
-                    <div class="auth-feature"><span class="auth-feature-index">03</span>Verifikasi email dengan kode OTP sebelum akun aktif.</div>
+                    <div class="auth-feature"><span class="auth-feature-index">01</span>Nama pengguna minimal 4
+                        karakter, huruf/angka/underscore.</div>
+                    <div class="auth-feature"><span class="auth-feature-index">02</span>Kata sandi minimal 8 karakter,
+                        kombinasi huruf besar, huruf kecil, angka, dan simbol.</div>
+                    <div class="auth-feature"><span class="auth-feature-index">03</span>Verifikasi email dengan kode OTP
+                        sebelum akun aktif.</div>
                 </div>
             </div>
             <div class="auth-side-footer">SISTEM PEMANTAUAN INTERNAL &middot; AKSES TERBATAS</div>
@@ -48,7 +56,8 @@
                 <form method="POST" action="{{ url_for('auth.register') }}" id="registerForm" novalidate>
                     <div class="field">
                         <label for="username">Nama pengguna</label>
-                        <input type="text" id="username" name="username" required autofocus minlength="4" pattern="^[A-Za-z0-9_]+$">
+                        <input type="text" id="username" name="username" required autofocus minlength="4"
+                            pattern="^[A-Za-z0-9_]+$">
                         <div class="field-hint">Minimal 4 karakter — huruf, angka, atau underscore.</div>
                         <div class="field-error">Nama pengguna minimal 4 karakter (huruf, angka, underscore).</div>
                         <div class="field-success">✓ Nama pengguna valid.</div>
@@ -56,25 +65,37 @@
 
                     <div class="field">
                         <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required>
+                        <input type="email" id="email" name="email" required placeholder="email@gmail.com">
                         <div class="field-hint">Kode OTP untuk verifikasi akun akan dikirim ke email ini.</div>
                         <div class="field-error">Format email tidak valid.</div>
                         <div class="field-success">✓ Email valid.</div>
                     </div>
 
                     <div class="field">
+                        <label for="phone">Nomor HP</label>
+                        <input type="tel" id="phone" name="phone" required pattern="^(\+62|62|0)8[1-9][0-9]{6,10}$"
+                            placeholder="08xxxxxxxxxx">
+                        <div class="field-hint">Contoh: 08123456789 — digunakan untuk notifikasi darurat.</div>
+                        <div class="field-error">Format nomor HP tidak valid (gunakan format 08xxxxxxxxxx).</div>
+                        <div class="field-success">✓ Nomor HP valid.</div>
+                    </div>
+
+                    <div class="field">
                         <label for="password">Kata sandi</label>
                         <div class="password-wrapper">
-                            <input type="password" id="password" name="password" required minlength="8">
-                            <button type="button" class="toggle-password" data-target="password" aria-label="Tampilkan kata sandi">
-                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <input type="password" id="password" name="password" required minlength="8"
+                                pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&amp;*()_+\-=\[\]{};':&quot;\\|,.&lt;&gt;\/?]).{8,}$">
+                            <button type="button" class="toggle-password" data-target="password"
+                                aria-label="Tampilkan kata sandi">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
                             </button>
                         </div>
-                        <div class="field-hint">Minimal 8 karakter.</div>
-                        <div class="field-error">Kata sandi minimal 8 karakter.</div>
+                        <div class="field-hint">Minimal 8 karakter, kombinasi huruf besar, huruf kecil, angka, dan simbol.</div>
+                        <div class="field-error">Kata sandi minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, serta simbol.</div>
                         <div class="field-success">✓ Kata sandi memenuhi syarat.</div>
                     </div>
 
@@ -82,8 +103,10 @@
                         <label for="password_confirm">Konfirmasi kata sandi</label>
                         <div class="password-wrapper">
                             <input type="password" id="password_confirm" name="password_confirm" required>
-                            <button type="button" class="toggle-password" data-target="password_confirm" aria-label="Tampilkan kata sandi">
-                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <button type="button" class="toggle-password" data-target="password_confirm"
+                                aria-label="Tampilkan kata sandi">
+                                <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
                                 </svg>
@@ -106,4 +129,5 @@
     <script src="{{ url_for('static', filename='js/toggle-password.js') }}"></script>
     <script src="{{ url_for('static', filename='js/register-validate.js') }}"></script>
 </body>
+
 </html>

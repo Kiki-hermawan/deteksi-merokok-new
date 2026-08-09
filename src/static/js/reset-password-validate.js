@@ -11,9 +11,22 @@
         field.classList.toggle('is-valid', hasValue && isValid);
     }
 
+    // Kata sandi wajib: minimal 8 karakter + huruf besar + huruf kecil +
+    // angka + simbol. Sama persis dengan aturan di backend (auth.py) dan
+    // di register-validate.js.
+    function isStrongPassword(value) {
+        return (
+            value.length >= 8 &&
+            /[a-z]/.test(value) &&
+            /[A-Z]/.test(value) &&
+            /\d/.test(value) &&
+            /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)
+        );
+    }
+
     function validateNewPassword() {
         const hasValue = newPassword.value.length > 0;
-        const ok = newPassword.value.length >= 8;
+        const ok = isStrongPassword(newPassword.value);
         setState(newPassword, ok, hasValue);
         return ok;
     }

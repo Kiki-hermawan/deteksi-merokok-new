@@ -16,6 +16,27 @@ ALLOWED_AVATAR_EXT = {'png', 'jpg', 'jpeg', 'webp'}
 EMAIL_REGEX = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 OTP_PURPOSE_REGISTER = 'register'
 
+# Kata sandi wajib: minimal 8 karakter, mengandung huruf besar, huruf kecil,
+# angka, dan simbol. Dicek lewat fungsi (bukan satu regex besar) supaya
+# pesan error bisa lebih spesifik menunjukkan syarat mana yang belum terpenuhi.
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_SPECIAL_CHARS = r"""!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?"""
+
+
+def validate_password_strength(password):
+    """Mengembalikan (is_valid, pesan_error) untuk aturan kekuatan kata sandi."""
+    if not password or len(password) < PASSWORD_MIN_LENGTH:
+        return False, f'Kata sandi minimal {PASSWORD_MIN_LENGTH} karakter.'
+    if not re.search(r'[a-z]', password):
+        return False, 'Kata sandi harus mengandung minimal satu huruf kecil.'
+    if not re.search(r'[A-Z]', password):
+        return False, 'Kata sandi harus mengandung minimal satu huruf besar.'
+    if not re.search(r'\d', password):
+        return False, 'Kata sandi harus mengandung minimal satu angka.'
+    if not re.search(f'[{PASSWORD_SPECIAL_CHARS}]', password):
+        return False, 'Kata sandi harus mengandung minimal satu simbol (mis. ! @ # $ %).'
+    return True, ''
+
 
 def _issue_and_send_otp(user, purpose=OTP_PURPOSE_REGISTER):
     """Membuat kode OTP baru untuk user, menyimpannya (ter-hash), lalu mengirimkannya lewat email."""
@@ -79,6 +100,7 @@ def register():
 def register_post():
     username = request.form.get('username')
     email = (request.form.get('email') or '').strip().lower()
+    phone = request.form.get('phone', '').strip()
     password = request.form.get('password')
     password_confirm = request.form.get('password_confirm')
 
@@ -98,9 +120,18 @@ def register_post():
     if not EMAIL_REGEX.match(email):
         flash('Format email tidak valid.')
         return redirect(url_for('auth.register'))
+    
+    if not re.match(r'^(\+62|62|0)8[1-9][0-9]{6,10}$', phone):
+            flash('Format nomor HP tidak valid.')
+            return redirect(url_for('auth.register'))
 
-    if len(password) < 8:
-        flash('Password must be at least 8 characters long.')
+    if User.query.filter_by(phone=phone).first():
+            flash('Nomor HP sudah terdaftar.')
+            return redirect(url_for('auth.register'))
+
+    password_valid, password_error = validate_password_strength(password)
+    if not password_valid:
+        flash(password_error)
         return redirect(url_for('auth.register'))
 
     if password != password_confirm:
@@ -119,6 +150,7 @@ def register_post():
     new_user = User(
         username=username,
         email=email,
+        phone=phone,
         password=generate_password_hash(password, method='pbkdf2:sha256'),
         is_verified=False,
     )
@@ -301,8 +333,9 @@ def reset_password(token):
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        if not new_password or len(new_password) < 8:
-            flash('Kata sandi baru minimal 8 karakter.')
+        password_valid, password_error = validate_password_strength(new_password)
+        if not password_valid:
+            flash(password_error)
             return redirect(url_for('auth.reset_password', token=token))
 
         if new_password != confirm_password:
@@ -359,8 +392,9 @@ def update_password():
         flash('Kata sandi saat ini salah.')
         return redirect(url_for('auth.profile'))
 
-    if not new_password or len(new_password) < 8:
-        flash('Kata sandi baru minimal 8 karakter.')
+    password_valid, password_error = validate_password_strength(new_password)
+    if not password_valid:
+        flash(password_error)
         return redirect(url_for('auth.profile'))
 
     if new_password != confirm_password:
